@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
-import { Plus, Trash2, Coins, Package, History, ShoppingCart, MinusCircle, PlusCircle, Edit2, Settings, UserPlus, UserMinus, FileText, ArrowRightLeft, Users } from 'lucide-react';
+import { Plus, Trash2, Coins, Package, History, ShoppingCart, MinusCircle, PlusCircle, Edit2, Settings, UserPlus, UserMinus, FileText, ArrowRightLeft, ArrowLeft, LogOut } from 'lucide-react';
 
-const App = () => {
+const App = ({ user, campaign, onBackToCampaigns, onLogout }) => {
   const [players, setPlayers] = useState([]);
   const [activeView, setActiveView] = useState('loot');
   const [activeInventory, setActiveInventory] = useState(null);
   const [showPlayerModal, setShowPlayerModal] = useState(false);
   const [newPlayerName, setNewPlayerName] = useState('');
   const [loading, setLoading] = useState(true);
+  const [partyFundGetsShare, setPartyFundGetsShare] = useState(true);
 
   const [incomingLoot, setIncomingLoot] = useState([]);
   const [inventories, setInventories] = useState({});
@@ -21,16 +22,15 @@ const App = () => {
   const [showBuyModal, setShowBuyModal] = useState(false);
   const [showBulkImportModal, setShowBulkImportModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
-  const [showWageModal, setShowWageModal] = useState(false);
+  const [showSellModal, setShowSellModal] = useState(false);
   const [buyingPlayer, setBuyingPlayer] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
   const [transferringFrom, setTransferringFrom] = useState(null);
+  const [sellingFrom, setSellingFrom] = useState(null);
   const [newItem, setNewItem] = useState({ name: '', value: '', isTreasure: false, charges: null, consumable: false, notes: '' });
   const [bulkImportText, setBulkImportText] = useState('');
   const [parsedBulkItems, setParsedBulkItems] = useState([]);
   const [editingGold, setEditingGold] = useState(null);
-  const [crewCounts, setCrewCounts] = useState({});
-  const [wageNotes, setWageNotes] = useState('');
 
   // REAL-TIME CONFIGURATION
   // Set to false to disable real-time features (kill switch)
@@ -192,18 +192,6 @@ const App = () => {
       )
       .subscribe();
 
-    // Subscribe to crew changes
-    const crewChannel = supabase
-      .channel('crew-changes')
-      .on('postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'crew' },
-        (payload) => {
-          console.log('👥 Crew updated:', payload.new.counts);
-          setCrewCounts(payload.new.counts || {});
-        }
-      )
-      .subscribe();
-
     // Subscribe to transaction changes
     const transactionsChannel = supabase
       .channel('transactions-changes')
@@ -228,7 +216,6 @@ const App = () => {
       supabase.removeChannel(itemsChannel);
       supabase.removeChannel(playersChannel);
       supabase.removeChannel(partyFundChannel);
-      supabase.removeChannel(crewChannel);
       supabase.removeChannel(transactionsChannel);
     };
   }, [ENABLE_REALTIME]);
@@ -239,6 +226,7 @@ const App = () => {
       const { data: playersData } = await supabase
         .from('players')
         .select('name, gold')
+        .eq('campaign_id', campaign.id)
         .order('created_at');
 
       // Build gold object
@@ -251,7 +239,7 @@ const App = () => {
       const { data: partyData } = await supabase
         .from('party_fund')
         .select('gold')
-        .limit(1)
+        .eq('campaign_id', campaign.id)
         .single();
 
       goldObj['Party Fund'] = partyData?.gold || 0;
@@ -264,10 +252,22 @@ const App = () => {
   const loadAllData = async () => {
     setLoading(true);
     try {
+      // Load campaign settings
+      const { data: campaignData } = await supabase
+        .from('campaigns')
+        .select('*')
+        .eq('id', campaign.id)
+        .single();
+
+      if (campaignData) {
+        setPartyFundGetsShare(campaignData.party_fund_gets_share);
+      }
+
       // Load players
       const { data: playersData } = await supabase
         .from('players')
         .select('*')
+        .eq('campaign_id', campaign.id)
         .order('created_at');
 
       const playerNames = playersData?.map(p => p.name) || [];
@@ -283,32 +283,17 @@ const App = () => {
       const { data: partyData } = await supabase
         .from('party_fund')
         .select('*')
+        .eq('campaign_id', campaign.id)
         .single();
 
       goldObj['Party Fund'] = partyData?.gold || 0;
       setGold(goldObj);
 
-      // Load crew data
-      const { data: crewData } = await supabase
-        .from('crew')
-        .select('*')
-        .single();
-
-      if (crewData) {
-        setCrewCounts(crewData.counts || {});
-      } else {
-        // Initialize crew counts if not exists
-        const initialCounts = {};
-        for (let i = 1; i <= 10; i++) {
-          initialCounts[i] = 0;
-        }
-        setCrewCounts(initialCounts);
-      }
-
       // Load items
       const { data: itemsData } = await supabase
         .from('items')
         .select('*')
+        .eq('campaign_id', campaign.id)
         .order('created_at', { ascending: false });
 
       // Separate items by status
@@ -346,6 +331,7 @@ const App = () => {
       const { data: txData } = await supabase
         .from('transactions')
         .select('*')
+        .eq('campaign_id', campaign.id)
         .order('created_at', { ascending: false })
         .limit(50);
 
@@ -363,6 +349,7 @@ const App = () => {
     const { data, error } = await supabase
       .from('transactions')
       .insert([{
+        campaign_id: campaign.id,
         type,
         description,
         amount,
@@ -370,14 +357,14 @@ const App = () => {
       }])
       .select()
       .single();
-    
+
     if (!error && data) {
       setTransactions(prev => [data, ...prev]);
     }
   };
 
   const distributeGold = async (totalGold, description) => {
-    const shareCount = players.length + 1;
+    const shareCount = partyFundGetsShare ? players.length + 1 : players.length;
     const share = Math.floor(totalGold / shareCount);
 
     try {
@@ -386,7 +373,8 @@ const App = () => {
         const { error } = await supabase
           .from('players')
           .update({ gold: gold[player] + share })
-          .eq('name', player);
+          .eq('name', player)
+          .eq('campaign_id', campaign.id);
 
         if (error) {
           console.error(`Error updating gold for ${player}:`, error);
@@ -394,26 +382,28 @@ const App = () => {
         }
       }
 
-      // Get party fund row and update it
-      const { data: partyData, error: partyFetchError } = await supabase
-        .from('party_fund')
-        .select('id, gold')
-        .limit(1)
-        .single();
+      // Get party fund row and update it (only if party fund gets a share)
+      if (partyFundGetsShare) {
+        const { data: partyData, error: partyFetchError } = await supabase
+          .from('party_fund')
+          .select('id, gold')
+          .eq('campaign_id', campaign.id)
+          .single();
 
-      if (partyFetchError) {
-        console.error('Error fetching party fund:', partyFetchError);
-        throw partyFetchError;
-      }
+        if (partyFetchError) {
+          console.error('Error fetching party fund:', partyFetchError);
+          throw partyFetchError;
+        }
 
-      const { error: partyUpdateError } = await supabase
-        .from('party_fund')
-        .update({ gold: partyData.gold + share })
-        .eq('id', partyData.id);
+        const { error: partyUpdateError } = await supabase
+          .from('party_fund')
+          .update({ gold: partyData.gold + share })
+          .eq('id', partyData.id);
 
-      if (partyUpdateError) {
-        console.error('Error updating party fund:', partyUpdateError);
-        throw partyUpdateError;
+        if (partyUpdateError) {
+          console.error('Error updating party fund:', partyUpdateError);
+          throw partyUpdateError;
+        }
       }
 
       // Reload gold from database to ensure sync
@@ -433,6 +423,7 @@ const App = () => {
     const { data, error } = await supabase
       .from('items')
       .insert([{
+        campaign_id: campaign.id,
         name: newItem.name,
         value: parseFloat(newItem.value),
         is_treasure: newItem.isTreasure,
@@ -537,20 +528,42 @@ const App = () => {
     setTransferringFrom(null);
   };
 
-  const handleSellFromInventory = async (player, item) => {
+  const handleSellFromInventory = async (player, item, splitToAll = true) => {
     const sellValue = item.isTreasure ? item.originalValue : Math.floor(item.originalValue * 0.5);
-    await distributeGold(sellValue, `${player} sold ${item.name}`);
-    
+
+    if (splitToAll) {
+      // Distribute to all players
+      await distributeGold(sellValue, `${player} sold ${item.name} (split to all)`);
+    } else {
+      // Give gold only to the player who owns the item
+      try {
+        const { error } = await supabase
+          .from('players')
+          .update({ gold: gold[player] + sellValue })
+          .eq('name', player)
+          .eq('campaign_id', campaign.id);
+
+        if (error) throw error;
+
+        await reloadGold();
+        await addTransaction('sell', `${player} sold ${item.name} (kept proceeds)`, sellValue, player);
+      } catch (error) {
+        alert(`Error selling item: ${error.message}`);
+        await loadAllData();
+        return;
+      }
+    }
+
     await supabase
       .from('items')
       .update({ status: 'sold' })
       .eq('id', item.id);
-    
+
     setInventories(prev => ({
       ...prev,
       [player]: prev[player].filter(i => i.id !== item.id)
     }));
-    
+
     setMasterLog(prev => prev.map(i => i.id === item.id ? { ...i, status: 'sold' } : i));
   };
 
@@ -603,6 +616,7 @@ const App = () => {
       const { data: itemData, error } = await supabase
         .from('items')
         .insert([{
+          campaign_id: campaign.id,
           name: newItem.name,
           value: cost,
           original_value: cost,
@@ -628,7 +642,7 @@ const App = () => {
         const { data: partyData, error: partyFetchError } = await supabase
           .from('party_fund')
           .select('id, gold')
-          .limit(1)
+          .eq('campaign_id', campaign.id)
           .single();
 
         if (partyFetchError) {
@@ -695,12 +709,12 @@ const App = () => {
       alert('Player already exists!');
       return;
     }
-    
+
     const playerName = newPlayerName.trim();
-    
+
     const { error } = await supabase
       .from('players')
-      .insert([{ name: playerName, gold: 0 }]);
+      .insert([{ campaign_id: campaign.id, name: playerName, gold: 0 }]);
     
     if (error) {
       alert('Error adding player');
@@ -741,7 +755,7 @@ const handleGoldEdit = async (entity, newValue) => {
       const { data: partyData, error: fetchError } = await supabase
         .from('party_fund')
         .select('id, gold')
-        .limit(1)
+        .eq('campaign_id', campaign.id)
         .single();
 
       if (fetchError) {
@@ -838,6 +852,7 @@ const handleGoldEdit = async (entity, newValue) => {
 
   const confirmBulkImport = async () => {
     const itemsToInsert = parsedBulkItems.map(parsed => ({
+      campaign_id: campaign.id,
       name: parsed.quantity > 1 ? `${parsed.quantity}x ${parsed.name}` : parsed.name,
       value: parsed.totalPrice,
       is_treasure: parsed.isTreasure,
@@ -862,97 +877,6 @@ const handleGoldEdit = async (entity, newValue) => {
     setShowBulkImportModal(false);
   };
 
-  const updateCrewCount = async (level, delta) => {
-    const newCount = Math.max(0, (crewCounts[level] || 0) + delta);
-    const newCounts = { ...crewCounts, [level]: newCount };
-    setCrewCounts(newCounts);
-
-    // Update database
-    try {
-      const { data: existingCrew } = await supabase
-        .from('crew')
-        .select('*')
-        .single();
-
-      if (existingCrew) {
-        await supabase
-          .from('crew')
-          .update({ counts: newCounts })
-          .eq('id', existingCrew.id);
-      } else {
-        await supabase
-          .from('crew')
-          .insert([{ counts: newCounts }]);
-      }
-    } catch (error) {
-      console.error('Error updating crew:', error);
-    }
-  };
-
-  const calculateWageCost = () => {
-    let totalCost = 0;
-    for (let level = 1; level <= 10; level++) {
-      const count = crewCounts[level] || 0;
-      if (count > 0) {
-        const salary = Math.pow(5 * level, 2);
-        const foodAndDrink = 9 * count;
-        totalCost += (salary * count) + foodAndDrink;
-      }
-    }
-    return totalCost;
-  };
-
-  const handlePayWages = async () => {
-    const totalCost = calculateWageCost();
-    const partyGold = gold['Party Fund'];
-
-    if (partyGold < totalCost) {
-      alert(`Not enough gold in Party Fund! Need ${totalCost} gp but only have ${partyGold} gp.`);
-      return;
-    }
-
-    try {
-      // Get party fund row
-      const { data: partyData, error: partyFetchError } = await supabase
-        .from('party_fund')
-        .select('id, gold')
-        .limit(1)
-        .single();
-
-      if (partyFetchError) {
-        console.error('Error fetching party fund:', partyFetchError);
-        throw partyFetchError;
-      }
-
-      // Update party fund
-      const { error: updateError } = await supabase
-        .from('party_fund')
-        .update({ gold: partyData.gold - totalCost })
-        .eq('id', partyData.id);
-
-      if (updateError) {
-        console.error('Error updating party fund:', updateError);
-        throw updateError;
-      }
-
-      // Reload gold
-      await reloadGold();
-
-      // Add transaction
-      const description = wageNotes
-        ? `Crew wages paid (${totalCost} gp) - ${wageNotes}`
-        : `Crew wages paid (${totalCost} gp)`;
-      await addTransaction('wages', description, -totalCost, 'Party Fund');
-
-      setWageNotes('');
-      setShowWageModal(false);
-      alert(`Successfully paid ${totalCost} gp in crew wages!`);
-    } catch (error) {
-      alert(`Error paying wages: ${error.message}`);
-      await loadAllData();
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 flex items-center justify-center">
@@ -966,15 +890,35 @@ const handleGoldEdit = async (entity, newValue) => {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="bg-gradient-to-r from-cyan-600 to-blue-600 rounded-lg p-6 mb-6 shadow-2xl">
-          <h1 className="text-4xl font-bold mb-2">Party Loot Tracker | Besmara's Teet</h1>
-          <p className="text-cyan-100">Pathfinder 1e - Gold Distribution & Inventory</p>
+          <div className="flex justify-between items-center flex-wrap gap-4">
+            <div>
+              <h1 className="text-2xl md:text-4xl font-bold mb-2">{campaign.name}</h1>
+              <p className="text-sm md:text-base text-cyan-100">Pathfinder 1e - Gold Distribution & Inventory</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={onBackToCampaigns}
+                className="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+              >
+                <ArrowLeft size={18} />
+                Campaigns
+              </button>
+              <button
+                onClick={onLogout}
+                className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+              >
+                <LogOut size={18} />
+                Logout
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Navigation */}
-        <div className="flex gap-2 mb-6 overflow-x-auto">
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
           <button
             onClick={() => setActiveView('loot')}
-            className={`px-6 py-3 rounded-lg font-medium flex items-center gap-2 whitespace-nowrap transition-all ${
+            className={`px-4 md:px-6 py-3 rounded-lg font-medium flex items-center gap-2 whitespace-nowrap transition-all text-sm md:text-base ${
               activeView === 'loot' ? 'bg-cyan-600 shadow-lg' : 'bg-slate-800 hover:bg-slate-700'
             }`}
           >
@@ -983,7 +927,7 @@ const handleGoldEdit = async (entity, newValue) => {
           </button>
           <button
             onClick={() => setActiveView('inventories')}
-            className={`px-6 py-3 rounded-lg font-medium flex items-center gap-2 whitespace-nowrap transition-all ${
+            className={`px-4 md:px-6 py-3 rounded-lg font-medium flex items-center gap-2 whitespace-nowrap transition-all text-sm md:text-base ${
               activeView === 'inventories' ? 'bg-cyan-600 shadow-lg' : 'bg-slate-800 hover:bg-slate-700'
             }`}
           >
@@ -992,34 +936,25 @@ const handleGoldEdit = async (entity, newValue) => {
           </button>
           <button
             onClick={() => setActiveView('gold')}
-            className={`px-6 py-3 rounded-lg font-medium flex items-center gap-2 whitespace-nowrap transition-all ${
+            className={`px-4 md:px-6 py-3 rounded-lg font-medium flex items-center gap-2 whitespace-nowrap transition-all text-sm md:text-base ${
               activeView === 'gold' ? 'bg-cyan-600 shadow-lg' : 'bg-slate-800 hover:bg-slate-700'
             }`}
           >
             <Coins size={20} />
-            Gold Tracking
-          </button>
-          <button
-            onClick={() => setActiveView('crew')}
-            className={`px-6 py-3 rounded-lg font-medium flex items-center gap-2 whitespace-nowrap transition-all ${
-              activeView === 'crew' ? 'bg-cyan-600 shadow-lg' : 'bg-slate-800 hover:bg-slate-700'
-            }`}
-          >
-            <Users size={20} />
-            Crew
+            Gold
           </button>
           <button
             onClick={() => setActiveView('history')}
-            className={`px-6 py-3 rounded-lg font-medium flex items-center gap-2 whitespace-nowrap transition-all ${
+            className={`px-4 md:px-6 py-3 rounded-lg font-medium flex items-center gap-2 whitespace-nowrap transition-all text-sm md:text-base ${
               activeView === 'history' ? 'bg-cyan-600 shadow-lg' : 'bg-slate-800 hover:bg-slate-700'
             }`}
           >
             <History size={20} />
-            Master Log
+            Log
           </button>
           <button
             onClick={() => setActiveView('settings')}
-            className={`px-6 py-3 rounded-lg font-medium flex items-center gap-2 whitespace-nowrap transition-all ${
+            className={`px-4 md:px-6 py-3 rounded-lg font-medium flex items-center gap-2 whitespace-nowrap transition-all text-sm md:text-base ${
               activeView === 'settings' ? 'bg-cyan-600 shadow-lg' : 'bg-slate-800 hover:bg-slate-700'
             }`}
           >
@@ -1194,11 +1129,15 @@ const handleGoldEdit = async (entity, newValue) => {
                       </div>
                       <div className="flex gap-2">
                         <button
-                          onClick={() => handleSellFromInventory(activeInventory, item)}
+                          onClick={() => {
+                            setSelectedItem(item);
+                            setSellingFrom(activeInventory);
+                            setShowSellModal(true);
+                          }}
                           className="flex-1 bg-cyan-600 hover:bg-cyan-700 px-4 py-2 rounded text-sm transition-colors inline-flex items-center justify-center gap-2"
                         >
                           <Coins size={16} />
-                          Sell for {item.isTreasure ? item.originalValue : Math.floor(item.originalValue * 0.5)} gp (split)
+                          Sell for {item.isTreasure ? item.originalValue : Math.floor(item.originalValue * 0.5)} gp
                         </button>
                         <button
                           onClick={() => {
@@ -1344,85 +1283,12 @@ const handleGoldEdit = async (entity, newValue) => {
           </div>
         )}
 
-        {/* Crew View */}
-        {activeView === 'crew' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold">Crew Management</h2>
-              <button
-                onClick={() => setShowWageModal(true)}
-                className="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg font-medium flex items-center gap-2 transition-colors"
-              >
-                <Coins size={20} />
-                Pay Wages
-              </button>
-            </div>
-
-            <div className="bg-slate-800 rounded-lg p-6 shadow-xl border border-slate-700">
-              <div className="mb-6">
-                <div className="text-slate-300 mb-2">Party Fund Available</div>
-                <div className="text-3xl font-bold text-cyan-400">{gold['Party Fund']} gp</div>
-              </div>
-
-              <div className="space-y-3">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(level => {
-                  const count = crewCounts[level] || 0;
-                  const salary = Math.pow(5 * level, 2);
-                  const foodAndDrink = 9;
-                  const totalPerCrew = salary + foodAndDrink;
-                  const totalCost = (salary * count) + (foodAndDrink * count);
-
-                  return (
-                    <div key={level} className="bg-slate-700 rounded-lg p-4 border border-slate-600">
-                      <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-4 flex-1">
-                          <div className="text-lg font-bold text-cyan-400 w-24">Level {level}</div>
-                          <div className="flex items-center gap-3">
-                            <button
-                              onClick={() => updateCrewCount(level, -1)}
-                              className="bg-red-500 hover:bg-red-600 p-2 rounded transition-colors"
-                              disabled={count === 0}
-                            >
-                              <MinusCircle size={20} />
-                            </button>
-                            <div className="font-mono font-bold text-2xl w-16 text-center">{count}</div>
-                            <button
-                              onClick={() => updateCrewCount(level, 1)}
-                              className="bg-green-500 hover:bg-green-600 p-2 rounded transition-colors"
-                            >
-                              <PlusCircle size={20} />
-                            </button>
-                          </div>
-                          <div className="text-sm text-slate-300">
-                            <div>{salary} gp/crew + 9 gp food = <span className="font-semibold text-cyan-300">{totalPerCrew} gp/crew</span></div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm text-slate-400">Total Cost</div>
-                          <div className="text-xl font-bold text-cyan-300">{totalCost} gp</div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="mt-6 pt-6 border-t border-slate-600">
-                <div className="flex justify-between items-center">
-                  <div className="text-xl font-bold">Total Monthly Wages</div>
-                  <div className="text-3xl font-bold text-cyan-400">{calculateWageCost()} gp</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Master Log View */}
         {activeView === 'history' && (
           <div className="space-y-4">
             <h2 className="text-2xl font-bold">Master Item Log</h2>
-            <div className="bg-slate-800 rounded-lg overflow-hidden border border-slate-700">
-              <table className="w-full">
+            <div className="bg-slate-800 rounded-lg overflow-hidden border border-slate-700 overflow-x-auto">
+              <table className="w-full min-w-[600px]">
                 <thead className="bg-slate-900">
                   <tr>
                     <th className="px-4 py-3 text-left">Item</th>
@@ -1462,7 +1328,45 @@ const handleGoldEdit = async (entity, newValue) => {
         {activeView === 'settings' && (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold">Campaign Settings</h2>
-            
+
+            {/* Party Fund Toggle */}
+            <div className="bg-slate-800 rounded-lg p-6 shadow-xl border border-slate-700">
+              <h3 className="text-xl font-bold mb-4">Gold Distribution</h3>
+              <div className="flex items-center justify-between p-4 bg-slate-700 rounded-lg border border-slate-600">
+                <div className="flex-1">
+                  <div className="font-semibold text-lg mb-1">Party Fund Gets a Share</div>
+                  <div className="text-sm text-slate-400">
+                    {partyFundGetsShare
+                      ? `Gold is split ${players.length + 1} ways (${players.length} players + Party Fund)`
+                      : `Gold is split ${players.length} ways (${players.length} players only)`}
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={partyFundGetsShare}
+                    onChange={async (e) => {
+                      const newValue = e.target.checked;
+                      setPartyFundGetsShare(newValue);
+                      try {
+                        const { error } = await supabase
+                          .from('campaigns')
+                          .update({ party_fund_gets_share: newValue })
+                          .eq('id', campaign.id);
+                        if (error) throw error;
+                      } catch (error) {
+                        console.error('Error updating setting:', error);
+                        alert('Error updating setting');
+                        setPartyFundGetsShare(!newValue);
+                      }
+                    }}
+                    className="sr-only peer"
+                  />
+                  <div className="w-14 h-7 bg-slate-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-cyan-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-cyan-600"></div>
+                </label>
+              </div>
+            </div>
+
             <div className="bg-slate-800 rounded-lg p-6 shadow-xl border border-slate-700">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-bold">Party Members</h3>
@@ -1476,7 +1380,7 @@ const handleGoldEdit = async (entity, newValue) => {
               </div>
 
               <div className="text-sm text-slate-400 mb-4">
-                Gold is split {players.length + 1} ways ({players.length} players + Party Fund)
+                Current split: {partyFundGetsShare ? `${players.length + 1} ways` : `${players.length} ways`}
               </div>
 
               <div className="space-y-3">
@@ -1657,6 +1561,66 @@ const handleGoldEdit = async (entity, newValue) => {
         </div>
       )}
 
+      {/* Sell Item Modal */}
+      {showSellModal && selectedItem && sellingFrom && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+          <div className="bg-slate-800 rounded-lg p-6 max-w-md w-full border border-slate-700">
+            <h3 className="text-xl font-bold mb-4">Sell {selectedItem.name}</h3>
+            <div className="mb-4 text-sm text-slate-300">
+              From: <span className="text-cyan-400 font-semibold">{sellingFrom}</span>
+              <br />
+              Sell Value: <span className="text-green-400 font-bold">
+                {selectedItem.isTreasure ? selectedItem.originalValue : Math.floor(selectedItem.originalValue * 0.5)} gp
+              </span>
+            </div>
+            <div className="mb-4 text-sm text-slate-400">
+              Choose how to distribute the gold:
+            </div>
+            <div className="space-y-2">
+              <button
+                onClick={async () => {
+                  await handleSellFromInventory(sellingFrom, selectedItem, true);
+                  setShowSellModal(false);
+                  setSelectedItem(null);
+                  setSellingFrom(null);
+                }}
+                className="w-full bg-cyan-600 hover:bg-cyan-700 px-4 py-3 rounded transition-colors text-left"
+              >
+                <div className="font-semibold">Split Gold to All</div>
+                <div className="text-sm text-cyan-100">
+                  Each player {partyFundGetsShare ? 'and party fund' : ''} gets{' '}
+                  {Math.floor((selectedItem.isTreasure ? selectedItem.originalValue : Math.floor(selectedItem.originalValue * 0.5)) / (partyFundGetsShare ? players.length + 1 : players.length))} gp
+                </div>
+              </button>
+              <button
+                onClick={async () => {
+                  await handleSellFromInventory(sellingFrom, selectedItem, false);
+                  setShowSellModal(false);
+                  setSelectedItem(null);
+                  setSellingFrom(null);
+                }}
+                className="w-full bg-blue-600 hover:bg-blue-700 px-4 py-3 rounded transition-colors text-left"
+              >
+                <div className="font-semibold">Give Gold to {sellingFrom} Only</div>
+                <div className="text-sm text-blue-100">
+                  {sellingFrom} gets {selectedItem.isTreasure ? selectedItem.originalValue : Math.floor(selectedItem.originalValue * 0.5)} gp
+                </div>
+              </button>
+            </div>
+            <button
+              onClick={() => {
+                setShowSellModal(false);
+                setSelectedItem(null);
+                setSellingFrom(null);
+              }}
+              className="w-full mt-4 bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Buy Item Modal */}
       {showBuyModal && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
@@ -1791,75 +1755,6 @@ const handleGoldEdit = async (entity, newValue) => {
                 className="flex-1 bg-green-600 hover:bg-green-700 px-4 py-2 rounded transition-colors"
               >
                 Add Player
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Pay Wages Modal */}
-      {showWageModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-800 rounded-lg p-6 max-w-md w-full border border-slate-700">
-            <h3 className="text-xl font-bold mb-4">Pay Crew Wages</h3>
-
-            <div className="mb-4">
-              <div className="text-sm text-slate-300 mb-2">Current Party Fund:</div>
-              <div className="text-2xl font-bold text-cyan-400 mb-4">{gold['Party Fund']} gp</div>
-
-              <div className="text-sm text-slate-300 mb-2">Total Wages Due:</div>
-              <div className="text-2xl font-bold text-red-400 mb-4">{calculateWageCost()} gp</div>
-
-              <div className="text-sm text-slate-300 mb-2">Remaining After Payment:</div>
-              <div className={`text-2xl font-bold mb-4 ${gold['Party Fund'] - calculateWageCost() >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {gold['Party Fund'] - calculateWageCost()} gp
-              </div>
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm mb-2">Notes (optional)</label>
-              <textarea
-                value={wageNotes}
-                onChange={(e) => setWageNotes(e.target.value)}
-                className="w-full bg-slate-700 rounded px-4 py-2 text-white border border-slate-600"
-                placeholder="e.g., Monthly wages for Flamerule"
-                rows="2"
-              />
-            </div>
-
-            <div className="mb-4 text-sm text-slate-400 bg-slate-900 rounded p-3">
-              <div className="font-semibold mb-2">Breakdown:</div>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(level => {
-                const count = crewCounts[level] || 0;
-                if (count === 0) return null;
-                const salary = Math.pow(5 * level, 2);
-                const foodAndDrink = 9 * count;
-                const totalCost = (salary * count) + foodAndDrink;
-                return (
-                  <div key={level} className="flex justify-between py-1">
-                    <span>Level {level} ({count} crew):</span>
-                    <span className="text-cyan-400">{totalCost} gp</span>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowWageModal(false);
-                  setWageNotes('');
-                }}
-                className="flex-1 bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handlePayWages}
-                disabled={calculateWageCost() === 0}
-                className="flex-1 bg-green-600 hover:bg-green-700 px-4 py-2 rounded transition-colors disabled:bg-slate-600 disabled:cursor-not-allowed"
-              >
-                Pay Wages
               </button>
             </div>
           </div>
