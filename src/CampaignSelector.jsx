@@ -15,6 +15,10 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
     loadCampaigns();
   }, []);
 
+  const getSuggestedCampaignName = () => {
+    return `Campaign #${campaigns.length + 1}`;
+  };
+
   const loadCampaigns = async () => {
     setLoading(true);
     try {
@@ -127,7 +131,10 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
         {/* Create Campaign Button */}
         <div className="mb-6">
           <button
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => {
+              setNewCampaignName(getSuggestedCampaignName());
+              setShowCreateModal(true);
+            }}
             className="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg flex items-center gap-2 transition-colors text-white font-medium"
           >
             <Plus size={20} />
@@ -236,7 +243,7 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
                     }
                   }}
                   className="w-full bg-slate-700 rounded px-4 py-2 text-white border border-slate-600"
-                  placeholder="e.g., Skull & Shackles"
+                  placeholder="e.g., Campaign #1"
                   autoFocus
                 />
               </div>

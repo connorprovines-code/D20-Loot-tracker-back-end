@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from './supabaseClient';
-import { Ship, LogIn, UserPlus, Mail, Lock } from 'lucide-react';
+import { Dices, LogIn, UserPlus, Mail, Lock } from 'lucide-react';
 
 const Auth = ({ onAuthSuccess }) => {
   const [loading, setLoading] = useState(false);
@@ -82,12 +82,12 @@ const Auth = ({ onAuthSuccess }) => {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <Ship size={64} className="text-cyan-400" />
+            <Dices size={64} className="text-cyan-400" />
           </div>
           <h1 className="text-4xl font-bold text-white mb-2">
-            Besmara's Loot Tracker
+            Loot Tracker for D20 TTRPGs
           </h1>
-          <p className="text-cyan-100">Pathfinder 1e Campaign Manager</p>
+          <p className="text-cyan-100">Campaign Manager for D&D, Pathfinder & More</p>
         </div>
 
         {/* Auth Form */}
@@ -218,7 +218,7 @@ const Auth = ({ onAuthSuccess }) => {
         </div>
 
         <div className="mt-6 text-center text-sm text-slate-400">
-          <p>Manage your Pathfinder campaigns with real-time collaboration</p>
+          <p>Manage your D&D, Pathfinder, or any D20 campaign with real-time collaboration</p>
         </div>
       </div>
     </div>

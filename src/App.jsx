@@ -880,7 +880,7 @@ const handleGoldEdit = async (entity, newValue) => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-2xl">Loading Besmara's Loot...</div>
+        <div className="text-white text-2xl">Loading {campaign.name}...</div>
       </div>
     );
   }
@@ -893,7 +893,7 @@ const handleGoldEdit = async (entity, newValue) => {
           <div className="flex justify-between items-center flex-wrap gap-4">
             <div>
               <h1 className="text-2xl md:text-4xl font-bold mb-2">{campaign.name}</h1>
-              <p className="text-sm md:text-base text-cyan-100">Pathfinder 1e - Gold Distribution & Inventory</p>
+              <p className="text-sm md:text-base text-cyan-100">D20 TTRPG - Gold Distribution & Inventory</p>
             </div>
             <div className="flex gap-2">
               <button
@@ -1586,7 +1586,7 @@ const handleGoldEdit = async (entity, newValue) => {
                 }}
                 className="w-full bg-cyan-600 hover:bg-cyan-700 px-4 py-3 rounded transition-colors text-left"
               >
-                <div className="font-semibold">Split Gold to All</div>
+                <div className="font-semibold">Sell for {selectedItem.isTreasure ? selectedItem.originalValue : Math.floor(selectedItem.originalValue * 0.5)} gp (Split to All)</div>
                 <div className="text-sm text-cyan-100">
                   Each player {partyFundGetsShare ? 'and party fund' : ''} gets{' '}
                   {Math.floor((selectedItem.isTreasure ? selectedItem.originalValue : Math.floor(selectedItem.originalValue * 0.5)) / (partyFundGetsShare ? players.length + 1 : players.length))} gp
@@ -1601,9 +1601,9 @@ const handleGoldEdit = async (entity, newValue) => {
                 }}
                 className="w-full bg-blue-600 hover:bg-blue-700 px-4 py-3 rounded transition-colors text-left"
               >
-                <div className="font-semibold">Give Gold to {sellingFrom} Only</div>
+                <div className="font-semibold">Sell for {selectedItem.isTreasure ? selectedItem.originalValue : Math.floor(selectedItem.originalValue * 0.5)} gp ({sellingFrom} Only)</div>
                 <div className="text-sm text-blue-100">
-                  {sellingFrom} gets {selectedItem.isTreasure ? selectedItem.originalValue : Math.floor(selectedItem.originalValue * 0.5)} gp
+                  {sellingFrom} keeps all {selectedItem.isTreasure ? selectedItem.originalValue : Math.floor(selectedItem.originalValue * 0.5)} gp
                 </div>
               </button>
             </div>
