@@ -886,11 +886,11 @@ const handleGoldEdit = async (entity, newValue) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white p-3 sm:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="bg-gradient-to-r from-cyan-600 to-blue-600 rounded-lg p-6 mb-6 shadow-2xl">
-          <div className="flex justify-between items-center flex-wrap gap-4">
+        <div className="bg-gradient-to-r from-cyan-600 to-blue-600 rounded-lg p-4 sm:p-6 mb-4 sm:mb-6 shadow-2xl">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h1 className="text-2xl md:text-4xl font-bold mb-2">{campaign.name}</h1>
               <p className="text-sm md:text-base text-cyan-100">D20 TTRPG - Gold Distribution & Inventory</p>
@@ -965,10 +965,10 @@ const handleGoldEdit = async (entity, newValue) => {
 
         {/* Incoming Loot View */}
         {activeView === 'loot' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold">Unprocessed Loot</h2>
-              <div className="flex gap-2">
+          <div className="space-y-4 sm:space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+              <h2 className="text-xl sm:text-2xl font-bold">Unprocessed Loot</h2>
+              <div className="flex gap-2 flex-wrap">
                 <button
                   onClick={() => setShowBulkImportModal(true)}
                   className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
@@ -1025,10 +1025,10 @@ const handleGoldEdit = async (entity, newValue) => {
                     </button>
                   </div>
 
-                  <div className="flex gap-3">
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                     <button
                       onClick={() => handleSellItem(item)}
-                      className="flex-1 bg-cyan-600 hover:bg-cyan-700 px-4 py-3 rounded-lg font-medium transition-colors"
+                      className="flex-1 bg-cyan-600 hover:bg-cyan-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-medium transition-colors text-sm sm:text-base"
                     >
                       Sell ({item.is_treasure ? item.value : Math.floor(item.value * 0.5)} gp ÷ {players.length + 1})
                     </button>
@@ -1037,7 +1037,7 @@ const handleGoldEdit = async (entity, newValue) => {
                         setSelectedItem(item);
                         setShowAssignModal(true);
                       }}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 px-4 py-3 rounded-lg font-medium transition-colors"
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg font-medium transition-colors text-sm sm:text-base"
                     >
                       Assign to Player
                     </button>
@@ -1233,8 +1233,8 @@ const handleGoldEdit = async (entity, newValue) => {
         {/* Gold Tracking View */}
         {activeView === 'gold' && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold">Current Gold</h2>
-            <div className="grid md:grid-cols-3 gap-4">
+            <h2 className="text-xl sm:text-2xl font-bold">Current Gold</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {Object.entries(gold).map(([entity, amount]) => (
                 <div key={entity} className="bg-slate-800 rounded-lg p-6 shadow-xl border border-slate-700">
                   <div className="text-slate-300 mb-2">{entity}</div>
@@ -1286,24 +1286,24 @@ const handleGoldEdit = async (entity, newValue) => {
         {/* Master Log View */}
         {activeView === 'history' && (
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold">Master Item Log</h2>
+            <h2 className="text-xl sm:text-2xl font-bold">Master Item Log</h2>
             <div className="bg-slate-800 rounded-lg overflow-hidden border border-slate-700 overflow-x-auto">
-              <table className="w-full min-w-[600px]">
+              <table className="w-full text-sm sm:text-base">
                 <thead className="bg-slate-900">
                   <tr>
-                    <th className="px-4 py-3 text-left">Item</th>
-                    <th className="px-4 py-3 text-left">Status</th>
-                    <th className="px-4 py-3 text-left">Assigned To</th>
-                    <th className="px-4 py-3 text-left">Charges</th>
-                    <th className="px-4 py-3 text-left">Notes</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm">Item</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm">Status</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm hidden sm:table-cell">Assigned To</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm hidden md:table-cell">Charges</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm hidden lg:table-cell">Notes</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-700">
                   {masterLog.map(item => (
                     <tr key={item.id} className="hover:bg-slate-750">
-                      <td className="px-4 py-3">{item.name}</td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded text-sm ${
+                      <td className="px-2 sm:px-4 py-2 sm:py-3">{item.name}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3">
+                        <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs ${
                           item.status === 'sold' ? 'bg-cyan-600' :
                           item.status === 'assigned' ? 'bg-blue-600' :
                           item.status === 'depleted' ? 'bg-red-600' :
@@ -1313,9 +1313,9 @@ const handleGoldEdit = async (entity, newValue) => {
                           {item.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3">{item.assigned_to || '—'}</td>
-                      <td className="px-4 py-3">{item.charges !== null ? item.charges : '—'}</td>
-                      <td className="px-4 py-3 text-sm text-slate-400 italic">{item.notes || '—'}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 hidden sm:table-cell">{item.assigned_to || '—'}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 hidden md:table-cell">{item.charges !== null ? item.charges : '—'}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-slate-400 italic hidden lg:table-cell">{item.notes || '—'}</td>
                     </tr>
                   ))}
                 </tbody>
