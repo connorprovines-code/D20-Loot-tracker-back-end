@@ -109,7 +109,7 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6 flex justify-between items-center">
