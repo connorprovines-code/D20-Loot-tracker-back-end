@@ -1254,7 +1254,7 @@ const handleGoldEdit = async (entity, newValue) => {
                   ) : (
                     <div
                       onClick={() => setEditingGold(entity)}
-                      className="text-3xl font-bold text-cyan-400 cursor-pointer hover:text-cyan-300 flex items-center gap-2"
+                      className="text-3xl font-bold text-cyan-400 cursor-pointer hover:text-cyan-300 flex items-center gap-2 select-none"
                     >
                       {amount} gp
                       <Edit2 size={20} className="text-slate-500" />
