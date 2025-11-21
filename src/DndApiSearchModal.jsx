@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, X, Loader2 } from 'lucide-react';
 
 const DndApiSearchModal = ({ isOpen, onClose, onSelectItem }) => {
@@ -7,6 +7,16 @@ const DndApiSearchModal = ({ isOpen, onClose, onSelectItem }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedType, setSelectedType] = useState('all');
+
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setSearchTerm('');
+      setResults([]);
+      setError(null);
+      setSelectedType('all');
+    }
+  }, [isOpen]);
 
   const searchItems = async () => {
     if (!searchTerm.trim()) return;
