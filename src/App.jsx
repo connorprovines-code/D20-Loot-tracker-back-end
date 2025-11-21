@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 import { Plus, Trash2, Coins, Package, History, ShoppingCart, MinusCircle, PlusCircle, Edit2, Settings, UserPlus, UserMinus, FileText, ArrowRightLeft, ArrowLeft, LogOut } from 'lucide-react';
 import DndApiSearchModal from './DndApiSearchModal';
+import Pf2eApiSearchModal from './Pf2eApiSearchModal';
 
 const App = ({ user, campaign, onBackToCampaigns, onLogout }) => {
   const [players, setPlayers] = useState([]);
@@ -25,6 +26,7 @@ const App = ({ user, campaign, onBackToCampaigns, onLogout }) => {
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showSellModal, setShowSellModal] = useState(false);
   const [showDndApiSearch, setShowDndApiSearch] = useState(false);
+  const [showPf2eApiSearch, setShowPf2eApiSearch] = useState(false);
   const [buyingPlayer, setBuyingPlayer] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
   const [transferringFrom, setTransferringFrom] = useState(null);
@@ -1872,6 +1874,17 @@ const handleGoldEdit = async (entity, newValue) => {
               </button>
             )}
 
+            {/* Pathfinder 2e API Search Button */}
+            {campaign.game_system === 'pathfinder-2e' && (
+              <button
+                onClick={() => setShowPf2eApiSearch(true)}
+                className="w-full mb-4 bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded transition-colors flex items-center justify-center gap-2"
+              >
+                <Package size={18} />
+                Search Pathfinder 2e Library
+              </button>
+            )}
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm mb-2">Item Name</label>
@@ -2145,6 +2158,17 @@ const handleGoldEdit = async (entity, newValue) => {
               >
                 <Package size={18} />
                 Search D&D 5e Library
+              </button>
+            )}
+
+            {/* Pathfinder 2e API Search Button */}
+            {campaign.game_system === 'pathfinder-2e' && (
+              <button
+                onClick={() => setShowPf2eApiSearch(true)}
+                className="w-full mb-4 bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded transition-colors flex items-center justify-center gap-2"
+              >
+                <Package size={18} />
+                Search Pathfinder 2e Library
               </button>
             )}
 
@@ -2484,6 +2508,13 @@ const handleGoldEdit = async (entity, newValue) => {
       <DndApiSearchModal
         isOpen={showDndApiSearch}
         onClose={() => setShowDndApiSearch(false)}
+        onSelectItem={handleApiItemSelect}
+      />
+
+      {/* Pathfinder 2e API Search Modal */}
+      <Pf2eApiSearchModal
+        isOpen={showPf2eApiSearch}
+        onClose={() => setShowPf2eApiSearch(false)}
         onSelectItem={handleApiItemSelect}
       />
     </div>
