@@ -1236,6 +1236,35 @@ const handleGoldEdit = async (entity, newValue) => {
                             Consumable
                           </span>
                         )}
+
+                        {/* D&D 5e: Rarity Badge */}
+                        {campaign.game_system === 'dnd-5e' && item.rarity && (
+                          <span className={`px-2 py-1 rounded font-medium ${
+                            item.rarity === 'common' ? 'bg-gray-600' :
+                            item.rarity === 'uncommon' ? 'bg-green-600' :
+                            item.rarity === 'rare' ? 'bg-blue-600' :
+                            item.rarity === 'very rare' ? 'bg-purple-600' :
+                            item.rarity === 'legendary' ? 'bg-orange-600' :
+                            item.rarity === 'artifact' ? 'bg-red-600' :
+                            'bg-slate-600'
+                          }`}>
+                            {item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1)}
+                          </span>
+                        )}
+
+                        {/* D&D 5e: Attunement */}
+                        {campaign.game_system === 'dnd-5e' && item.requires_attunement && (
+                          <span className="px-2 py-1 rounded bg-amber-600 font-medium">
+                            Requires Attunement
+                          </span>
+                        )}
+
+                        {/* Pathfinder 2e: Bulk Display */}
+                        {campaign.game_system === 'pathfinder-2e' && item.bulk !== null && item.bulk !== undefined && (
+                          <span className="px-2 py-1 rounded bg-slate-600">
+                            {item.bulk === 0.1 ? 'L' : `${item.bulk} Bulk`}
+                          </span>
+                        )}
                       </div>
                       {item.notes && (
                         <div className="mt-2 text-sm text-slate-300 italic">
@@ -1562,7 +1591,31 @@ const handleGoldEdit = async (entity, newValue) => {
                             <div className="flex justify-between items-center">
                               <div className="flex-1">
                                 <div className="font-semibold">{item.name}</div>
-                                <div className="text-sm text-slate-300 mt-1">{item.originalValue} gp</div>
+                                <div className="text-sm text-slate-300 mt-1 flex gap-2 items-center flex-wrap">
+                                  <span>{item.originalValue} gp</span>
+
+                                  {/* D&D 5e: Rarity Badge */}
+                                  {campaign.game_system === 'dnd-5e' && item.rarity && (
+                                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                      item.rarity === 'common' ? 'bg-gray-600' :
+                                      item.rarity === 'uncommon' ? 'bg-green-600' :
+                                      item.rarity === 'rare' ? 'bg-blue-600' :
+                                      item.rarity === 'very rare' ? 'bg-purple-600' :
+                                      item.rarity === 'legendary' ? 'bg-orange-600' :
+                                      item.rarity === 'artifact' ? 'bg-red-600' :
+                                      'bg-slate-600'
+                                    }`}>
+                                      {item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1)}
+                                    </span>
+                                  )}
+
+                                  {/* Pathfinder 2e: Bulk Display */}
+                                  {campaign.game_system === 'pathfinder-2e' && item.bulk !== null && item.bulk !== undefined && (
+                                    <span className="px-2 py-0.5 rounded bg-slate-600 text-xs">
+                                      {item.bulk === 0.1 ? 'L' : `${item.bulk} Bulk`}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                               <div className="flex items-center gap-3">
                                 <button
