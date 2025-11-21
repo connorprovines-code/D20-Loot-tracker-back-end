@@ -1868,7 +1868,7 @@ const handleGoldEdit = async (entity, newValue) => {
                 className="w-full mb-4 bg-red-600 hover:bg-red-700 px-4 py-2 rounded transition-colors flex items-center justify-center gap-2"
               >
                 <Package size={18} />
-                Search D&D 5e API
+                Search D&D 5e Library
               </button>
             )}
 
@@ -2144,7 +2144,7 @@ const handleGoldEdit = async (entity, newValue) => {
                 className="w-full mb-4 bg-red-600 hover:bg-red-700 px-4 py-2 rounded transition-colors flex items-center justify-center gap-2"
               >
                 <Package size={18} />
-                Search D&D 5e API
+                Search D&D 5e Library
               </button>
             )}
 
