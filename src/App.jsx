@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 import { Plus, Trash2, Coins, Package, History, ShoppingCart, MinusCircle, PlusCircle, Edit2, Settings, UserPlus, UserMinus, FileText, ArrowRightLeft, ArrowLeft, LogOut } from 'lucide-react';
+import DndApiSearchModal from './DndApiSearchModal';
 
 const App = ({ user, campaign, onBackToCampaigns, onLogout }) => {
   const [players, setPlayers] = useState([]);
@@ -23,11 +24,23 @@ const App = ({ user, campaign, onBackToCampaigns, onLogout }) => {
   const [showBulkImportModal, setShowBulkImportModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showSellModal, setShowSellModal] = useState(false);
+  const [showDndApiSearch, setShowDndApiSearch] = useState(false);
   const [buyingPlayer, setBuyingPlayer] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
   const [transferringFrom, setTransferringFrom] = useState(null);
   const [sellingFrom, setSellingFrom] = useState(null);
-  const [newItem, setNewItem] = useState({ name: '', value: '', isTreasure: false, charges: null, consumable: false, notes: '' });
+  const [newItem, setNewItem] = useState({
+    name: '',
+    value: '',
+    isTreasure: false,
+    charges: null,
+    consumable: false,
+    notes: '',
+    bulk: null,
+    rarity: null,
+    requires_attunement: false,
+    is_attuned: false
+  });
   const [bulkImportText, setBulkImportText] = useState('');
   const [parsedBulkItems, setParsedBulkItems] = useState([]);
   const [editingGold, setEditingGold] = useState(null);
@@ -422,6 +435,17 @@ const App = ({ user, campaign, onBackToCampaigns, onLogout }) => {
     }
   };
 
+  const handleApiItemSelect = (apiItem) => {
+    setNewItem({
+      ...newItem,
+      name: apiItem.name,
+      value: apiItem.value,
+      notes: apiItem.notes,
+      rarity: apiItem.rarity,
+      requires_attunement: apiItem.requires_attunement
+    });
+  };
+
   const handleAddItem = async () => {
     if (!newItem.name || !newItem.value) return;
 
@@ -435,7 +459,11 @@ const App = ({ user, campaign, onBackToCampaigns, onLogout }) => {
         charges: newItem.charges ? parseInt(newItem.charges) : null,
         consumable: newItem.consumable || false,
         notes: newItem.notes || '',
-        status: 'incoming'
+        status: 'incoming',
+        bulk: newItem.bulk ? parseFloat(newItem.bulk) : null,
+        rarity: newItem.rarity || null,
+        requires_attunement: newItem.requires_attunement || false,
+        is_attuned: newItem.is_attuned || false
       }])
       .select()
       .single();
@@ -451,7 +479,18 @@ const App = ({ user, campaign, onBackToCampaigns, onLogout }) => {
       setMasterLog(prev => [data, ...prev]);
     }
 
-    setNewItem({ name: '', value: '', isTreasure: false, charges: null, consumable: false, notes: '' });
+    setNewItem({
+      name: '',
+      value: '',
+      isTreasure: false,
+      charges: null,
+      consumable: false,
+      notes: '',
+      bulk: null,
+      rarity: null,
+      requires_attunement: false,
+      is_attuned: false
+    });
     setShowAddModal(false);
   };
 
@@ -717,7 +756,11 @@ const App = ({ user, campaign, onBackToCampaigns, onLogout }) => {
           consumable: newItem.consumable || false,
           notes: newItem.notes || '',
           status: 'purchased',
-          assigned_to: buyingPlayer
+          assigned_to: buyingPlayer,
+          bulk: newItem.bulk ? parseFloat(newItem.bulk) : null,
+          rarity: newItem.rarity || null,
+          requires_attunement: newItem.requires_attunement || false,
+          is_attuned: newItem.is_attuned || false
         }])
         .select()
         .single();
@@ -785,7 +828,18 @@ const App = ({ user, campaign, onBackToCampaigns, onLogout }) => {
       setMasterLog(prev => [itemData, ...prev]);
       await addTransaction('purchase', `${buyingPlayer} bought ${newItem.name}`, -cost, buyingPlayer);
 
-      setNewItem({ name: '', value: '', isTreasure: false, charges: null, consumable: false, notes: '' });
+      setNewItem({
+        name: '',
+        value: '',
+        isTreasure: false,
+        charges: null,
+        consumable: false,
+        notes: '',
+        bulk: null,
+        rarity: null,
+        requires_attunement: false,
+        is_attuned: false
+      });
       setShowBuyModal(false);
       setBuyingPlayer(null);
     } catch (error) {
@@ -1592,6 +1646,18 @@ const handleGoldEdit = async (entity, newValue) => {
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
           <div className="bg-slate-800 rounded-lg p-6 max-w-md w-full border border-slate-700">
             <h3 className="text-xl font-bold mb-4">Add New Item</h3>
+
+            {/* D&D 5e API Search Button */}
+            {campaign.game_system === 'dnd-5e' && (
+              <button
+                onClick={() => setShowDndApiSearch(true)}
+                className="w-full mb-4 bg-red-600 hover:bg-red-700 px-4 py-2 rounded transition-colors flex items-center justify-center gap-2"
+              >
+                <Package size={18} />
+                Search D&D 5e API
+              </button>
+            )}
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm mb-2">Item Name</label>
@@ -1633,6 +1699,53 @@ const handleGoldEdit = async (entity, newValue) => {
                   rows="2"
                 />
               </div>
+
+              {/* Pathfinder 2e: Bulk field */}
+              {campaign.game_system === 'pathfinder-2e' && (
+                <div>
+                  <label className="block text-sm mb-2">Bulk (optional)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={newItem.bulk || ''}
+                    onChange={(e) => setNewItem({ ...newItem, bulk: e.target.value })}
+                    className="w-full bg-slate-700 rounded px-4 py-2 text-white border border-slate-600"
+                    placeholder="e.g., 1 or 0.1 (L)"
+                  />
+                </div>
+              )}
+
+              {/* D&D 5e: Rarity and Attunement fields */}
+              {campaign.game_system === 'dnd-5e' && (
+                <>
+                  <div>
+                    <label className="block text-sm mb-2">Rarity (optional)</label>
+                    <select
+                      value={newItem.rarity || ''}
+                      onChange={(e) => setNewItem({ ...newItem, rarity: e.target.value || null })}
+                      className="w-full bg-slate-700 rounded px-4 py-2 text-white border border-slate-600"
+                    >
+                      <option value="">None</option>
+                      <option value="common">Common</option>
+                      <option value="uncommon">Uncommon</option>
+                      <option value="rare">Rare</option>
+                      <option value="very rare">Very Rare</option>
+                      <option value="legendary">Legendary</option>
+                      <option value="artifact">Artifact</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={newItem.requires_attunement}
+                      onChange={(e) => setNewItem({ ...newItem, requires_attunement: e.target.checked })}
+                      className="w-4 h-4"
+                    />
+                    <label className="text-sm">Requires Attunement (max 3 per character)</label>
+                  </div>
+                </>
+              )}
+
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -1809,6 +1922,18 @@ const handleGoldEdit = async (entity, newValue) => {
             <div className="mb-4 text-sm text-slate-300">
               Current gold: <span className="text-cyan-400 font-bold">{gold[buyingPlayer] || gold['Party Fund']} gp</span>
             </div>
+
+            {/* D&D 5e API Search Button */}
+            {campaign.game_system === 'dnd-5e' && (
+              <button
+                onClick={() => setShowDndApiSearch(true)}
+                className="w-full mb-4 bg-red-600 hover:bg-red-700 px-4 py-2 rounded transition-colors flex items-center justify-center gap-2"
+              >
+                <Package size={18} />
+                Search D&D 5e API
+              </button>
+            )}
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm mb-2">Item Name</label>
@@ -1850,6 +1975,53 @@ const handleGoldEdit = async (entity, newValue) => {
                   rows="2"
                 />
               </div>
+
+              {/* Pathfinder 2e: Bulk field */}
+              {campaign.game_system === 'pathfinder-2e' && (
+                <div>
+                  <label className="block text-sm mb-2">Bulk (optional)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={newItem.bulk || ''}
+                    onChange={(e) => setNewItem({ ...newItem, bulk: e.target.value })}
+                    className="w-full bg-slate-700 rounded px-4 py-2 text-white border border-slate-600"
+                    placeholder="e.g., 1 or 0.1 (L)"
+                  />
+                </div>
+              )}
+
+              {/* D&D 5e: Rarity and Attunement fields */}
+              {campaign.game_system === 'dnd-5e' && (
+                <>
+                  <div>
+                    <label className="block text-sm mb-2">Rarity (optional)</label>
+                    <select
+                      value={newItem.rarity || ''}
+                      onChange={(e) => setNewItem({ ...newItem, rarity: e.target.value || null })}
+                      className="w-full bg-slate-700 rounded px-4 py-2 text-white border border-slate-600"
+                    >
+                      <option value="">None</option>
+                      <option value="common">Common</option>
+                      <option value="uncommon">Uncommon</option>
+                      <option value="rare">Rare</option>
+                      <option value="very rare">Very Rare</option>
+                      <option value="legendary">Legendary</option>
+                      <option value="artifact">Artifact</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={newItem.requires_attunement}
+                      onChange={(e) => setNewItem({ ...newItem, requires_attunement: e.target.checked })}
+                      className="w-4 h-4"
+                    />
+                    <label className="text-sm">Requires Attunement (max 3 per character)</label>
+                  </div>
+                </>
+              )}
+
               <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -1877,7 +2049,18 @@ const handleGoldEdit = async (entity, newValue) => {
                 onClick={() => {
                   setShowBuyModal(false);
                   setBuyingPlayer(null);
-                  setNewItem({ name: '', value: '', isTreasure: false, charges: null, consumable: false, notes: '' });
+                  setNewItem({
+                    name: '',
+                    value: '',
+                    isTreasure: false,
+                    charges: null,
+                    consumable: false,
+                    notes: '',
+                    bulk: null,
+                    rarity: null,
+                    requires_attunement: false,
+                    is_attuned: false
+                  });
                 }}
                 className="flex-1 bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded transition-colors"
               >
@@ -2082,6 +2265,13 @@ const handleGoldEdit = async (entity, newValue) => {
           </div>
         </div>
       )}
+
+      {/* D&D 5e API Search Modal */}
+      <DndApiSearchModal
+        isOpen={showDndApiSearch}
+        onClose={() => setShowDndApiSearch(false)}
+        onSelectItem={handleApiItemSelect}
+      />
     </div>
   );
 };
