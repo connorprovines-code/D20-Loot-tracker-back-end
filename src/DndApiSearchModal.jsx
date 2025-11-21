@@ -18,6 +18,14 @@ const DndApiSearchModal = ({ isOpen, onClose, onSelectItem }) => {
     }
   }, [isOpen]);
 
+  // Clear results when search term is cleared
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setResults([]);
+      setError(null);
+    }
+  }, [searchTerm]);
+
   const searchItems = async () => {
     if (!searchTerm.trim()) return;
 
