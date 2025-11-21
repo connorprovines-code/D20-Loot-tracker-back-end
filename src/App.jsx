@@ -132,7 +132,11 @@ const App = ({ user, campaign, onBackToCampaigns, onLogout }) => {
                   isTreasure: updatedItem.is_treasure,
                   charges: updatedItem.charges,
                   consumable: updatedItem.consumable,
-                  notes: updatedItem.notes || ''
+                  notes: updatedItem.notes || '',
+                  bulk: updatedItem.bulk,
+                  rarity: updatedItem.rarity,
+                  requires_attunement: updatedItem.requires_attunement || false,
+                  is_attuned: updatedItem.is_attuned || false
                 };
 
                 // Remove from all inventories first
@@ -337,7 +341,11 @@ const App = ({ user, campaign, onBackToCampaigns, onLogout }) => {
             isTreasure: item.is_treasure,
             charges: item.charges,
             consumable: item.consumable,
-            notes: item.notes || ''
+            notes: item.notes || '',
+            bulk: item.bulk,
+            rarity: item.rarity,
+            requires_attunement: item.requires_attunement || false,
+            is_attuned: item.is_attuned || false
           });
         }
       });
@@ -544,7 +552,11 @@ const App = ({ user, campaign, onBackToCampaigns, onLogout }) => {
       isTreasure: item.is_treasure,
       charges: item.charges,
       consumable: item.consumable || false,
-      notes: item.notes || ''
+      notes: item.notes || '',
+      bulk: item.bulk,
+      rarity: item.rarity,
+      requires_attunement: item.requires_attunement || false,
+      is_attuned: item.is_attuned || false
     };
 
     setInventories(prev => ({
@@ -716,6 +728,57 @@ const App = ({ user, campaign, onBackToCampaigns, onLogout }) => {
     }
   };
 
+  // Calculate total bulk for a player (Pathfinder 2e)
+  const calculatePlayerBulk = (playerName) => {
+    const playerItems = inventories[playerName] || [];
+    return playerItems.reduce((total, item) => {
+      return total + (item.bulk || 0);
+    }, 0);
+  };
+
+  // Count attuned items for a player (D&D 5e)
+  const calculateAttunedItems = (playerName) => {
+    const playerItems = inventories[playerName] || [];
+    return playerItems.filter(item => item.is_attuned).length;
+  };
+
+  // Toggle attunement for an item (D&D 5e)
+  const handleToggleAttunement = async (item, playerName) => {
+    const currentAttuned = calculateAttunedItems(playerName);
+
+    // Check if trying to attune and already at max (3)
+    if (!item.is_attuned && currentAttuned >= 3) {
+      alert('Cannot attune more than 3 items! Unattune another item first.');
+      return;
+    }
+
+    const newAttunedState = !item.is_attuned;
+
+    try {
+      const { error } = await supabase
+        .from('items')
+        .update({ is_attuned: newAttunedState })
+        .eq('id', item.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setInventories(prev => ({
+        ...prev,
+        [playerName]: prev[playerName].map(i =>
+          i.id === item.id ? { ...i, is_attuned: newAttunedState } : i
+        )
+      }));
+
+      setMasterLog(prev => prev.map(i =>
+        i.id === item.id ? { ...i, is_attuned: newAttunedState } : i
+      ));
+    } catch (error) {
+      console.error('Error toggling attunement:', error);
+      alert('Error updating attunement');
+    }
+  };
+
   const sortInventory = (items) => {
     if (!items) return [];
     const sorted = [...items];
@@ -814,7 +877,11 @@ const App = ({ user, campaign, onBackToCampaigns, onLogout }) => {
         isTreasure: itemData.is_treasure,
         charges: itemData.charges,
         consumable: itemData.consumable,
-        notes: itemData.notes || ''
+        notes: itemData.notes || '',
+        bulk: itemData.bulk,
+        rarity: itemData.rarity,
+        requires_attunement: itemData.requires_attunement || false,
+        is_attuned: itemData.is_attuned || false
       };
 
       setInventories(prev => ({
@@ -1240,6 +1307,36 @@ const handleGoldEdit = async (entity, newValue) => {
                     <div className="text-cyan-400 font-bold text-xl mt-1">
                       {gold[activeInventory] || gold['Party Fund']} gp
                     </div>
+
+                    {/* Pathfinder 2e: Bulk Tracking */}
+                    {campaign.game_system === 'pathfinder-2e' && activeInventory !== 'Party' && (
+                      <div className="mt-2 text-sm">
+                        <span className={`font-semibold ${
+                          calculatePlayerBulk(activeInventory) > 10 ? 'text-red-400' :
+                          calculatePlayerBulk(activeInventory) > 5 ? 'text-yellow-400' :
+                          'text-slate-400'
+                        }`}>
+                          Bulk: {calculatePlayerBulk(activeInventory).toFixed(1)} / 10
+                        </span>
+                        {calculatePlayerBulk(activeInventory) > 10 && (
+                          <span className="ml-2 text-red-400 text-xs">(Encumbered!)</span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* D&D 5e: Attunement Tracking */}
+                    {campaign.game_system === 'dnd-5e' && activeInventory !== 'Party' && (
+                      <div className="mt-2 text-sm">
+                        <span className={`font-semibold ${
+                          calculateAttunedItems(activeInventory) >= 3 ? 'text-red-400' : 'text-slate-400'
+                        }`}>
+                          Attuned: {calculateAttunedItems(activeInventory)} / 3
+                        </span>
+                        {calculateAttunedItems(activeInventory) >= 3 && (
+                          <span className="ml-2 text-red-400 text-xs">(Max reached!)</span>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-3">
                     <label className="text-sm text-slate-400">Sort by:</label>
@@ -1265,6 +1362,37 @@ const handleGoldEdit = async (entity, newValue) => {
                             <span>{item.originalValue} gp {item.isTreasure ? '(Treasure)' : '(Loot)'}</span>
                             {item.consumable && (
                               <span className="px-2 py-0.5 rounded bg-purple-600 text-xs">Consumable</span>
+                            )}
+
+                            {/* D&D 5e: Rarity Badge */}
+                            {campaign.game_system === 'dnd-5e' && item.rarity && (
+                              <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                item.rarity === 'common' ? 'bg-gray-600' :
+                                item.rarity === 'uncommon' ? 'bg-green-600' :
+                                item.rarity === 'rare' ? 'bg-blue-600' :
+                                item.rarity === 'very rare' ? 'bg-purple-600' :
+                                item.rarity === 'legendary' ? 'bg-orange-600' :
+                                item.rarity === 'artifact' ? 'bg-red-600' :
+                                'bg-slate-600'
+                              }`}>
+                                {item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1)}
+                              </span>
+                            )}
+
+                            {/* D&D 5e: Attunement Status */}
+                            {campaign.game_system === 'dnd-5e' && item.requires_attunement && (
+                              <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                item.is_attuned ? 'bg-amber-600' : 'bg-slate-600'
+                              }`}>
+                                {item.is_attuned ? 'Attuned' : 'Requires Attunement'}
+                              </span>
+                            )}
+
+                            {/* Pathfinder 2e: Bulk Display */}
+                            {campaign.game_system === 'pathfinder-2e' && item.bulk !== null && item.bulk !== undefined && (
+                              <span className="px-2 py-0.5 rounded bg-slate-600 text-xs">
+                                {item.bulk === 0.1 ? 'L' : `${item.bulk} Bulk`}
+                              </span>
                             )}
                           </div>
                           {editingItemNotes === item.id ? (
@@ -1352,6 +1480,21 @@ const handleGoldEdit = async (entity, newValue) => {
                           <Edit2 size={16} />
                           Edit Notes
                         </button>
+
+                        {/* D&D 5e: Attunement Toggle */}
+                        {campaign.game_system === 'dnd-5e' && item.requires_attunement && (
+                          <button
+                            onClick={() => handleToggleAttunement(item, activeInventory)}
+                            className={`px-3 py-2 rounded text-sm transition-colors inline-flex items-center gap-2 ${
+                              item.is_attuned
+                                ? 'bg-amber-600 hover:bg-amber-700'
+                                : 'bg-slate-600 hover:bg-slate-500'
+                            }`}
+                          >
+                            {item.is_attuned ? '✓ Attuned' : 'Attune'}
+                          </button>
+                        )}
+
                         <button
                           onClick={() => handleDiscardItem(activeInventory, item)}
                           className="bg-red-600 hover:bg-red-700 px-3 py-2 rounded text-sm transition-colors inline-flex items-center gap-2"
