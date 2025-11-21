@@ -457,6 +457,15 @@ const App = ({ user, campaign, onBackToCampaigns, onLogout }) => {
   const handleAddItem = async () => {
     if (!newItem.name || !newItem.value) return;
 
+    // Parse bulk value properly
+    let bulkValue = null;
+    if (newItem.bulk && newItem.bulk !== '') {
+      const parsed = parseFloat(newItem.bulk);
+      if (!isNaN(parsed)) {
+        bulkValue = parsed;
+      }
+    }
+
     const { data, error } = await supabase
       .from('items')
       .insert([{
@@ -468,7 +477,7 @@ const App = ({ user, campaign, onBackToCampaigns, onLogout }) => {
         consumable: newItem.consumable || false,
         notes: newItem.notes || '',
         status: 'incoming',
-        bulk: newItem.bulk ? parseFloat(newItem.bulk) : null,
+        bulk: bulkValue,
         rarity: newItem.rarity || null,
         requires_attunement: newItem.requires_attunement || false,
         is_attuned: newItem.is_attuned || false
@@ -805,6 +814,15 @@ const App = ({ user, campaign, onBackToCampaigns, onLogout }) => {
       return;
     }
 
+    // Parse bulk value properly
+    let bulkValue = null;
+    if (newItem.bulk && newItem.bulk !== '') {
+      const parsed = parseFloat(newItem.bulk);
+      if (!isNaN(parsed)) {
+        bulkValue = parsed;
+      }
+    }
+
     try {
       // Insert item
       const { data: itemData, error } = await supabase
@@ -820,7 +838,7 @@ const App = ({ user, campaign, onBackToCampaigns, onLogout }) => {
           notes: newItem.notes || '',
           status: 'purchased',
           assigned_to: buyingPlayer,
-          bulk: newItem.bulk ? parseFloat(newItem.bulk) : null,
+          bulk: bulkValue,
           rarity: newItem.rarity || null,
           requires_attunement: newItem.requires_attunement || false,
           is_attuned: newItem.is_attuned || false
