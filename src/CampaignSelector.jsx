@@ -7,6 +7,7 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newCampaignName, setNewCampaignName] = useState('');
+  const [newCampaignSystem, setNewCampaignSystem] = useState('dnd-5e');
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState('');
@@ -17,6 +18,16 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
 
   const getSuggestedCampaignName = () => {
     return `Campaign #${campaigns.length + 1}`;
+  };
+
+  const getSystemDisplayInfo = (system) => {
+    const systemInfo = {
+      'dnd-5e': { name: 'D&D 5e', color: 'bg-red-600' },
+      'pathfinder-1e': { name: 'Pathfinder 1e', color: 'bg-amber-600' },
+      'pathfinder-2e': { name: 'Pathfinder 2e', color: 'bg-orange-600' },
+      'other': { name: 'Other System', color: 'bg-slate-600' }
+    };
+    return systemInfo[system] || systemInfo['other'];
   };
 
   const loadCampaigns = async () => {
@@ -45,7 +56,8 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
       // Call the helper function to create campaign with party_fund
       const { data, error } = await supabase.rpc('initialize_campaign', {
         campaign_name: newCampaignName.trim(),
-        user_id: user.id
+        user_id: user.id,
+        game_system: newCampaignSystem
       });
 
       if (error) throw error;
@@ -53,6 +65,7 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
       // Reload campaigns
       await loadCampaigns();
       setNewCampaignName('');
+      setNewCampaignSystem('dnd-5e');
       setShowCreateModal(false);
     } catch (error) {
       console.error('Error creating campaign:', error);
@@ -182,7 +195,12 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
                       </div>
                     ) : (
                       <>
-                        <h3 className="text-2xl font-bold text-white mb-2">{campaign.name}</h3>
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-2xl font-bold text-white">{campaign.name}</h3>
+                          <span className={`${getSystemDisplayInfo(campaign.game_system).color} text-white text-xs px-2 py-1 rounded-full font-medium`}>
+                            {getSystemDisplayInfo(campaign.game_system).name}
+                          </span>
+                        </div>
                         <p className="text-sm text-slate-400">
                           Created {new Date(campaign.created_at).toLocaleDateString()}
                         </p>
@@ -245,12 +263,26 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
                   autoFocus
                 />
               </div>
+              <div>
+                <label className="block text-sm text-slate-300 mb-2">Game System</label>
+                <select
+                  value={newCampaignSystem}
+                  onChange={(e) => setNewCampaignSystem(e.target.value)}
+                  className="w-full bg-slate-700 rounded px-4 py-2 text-white border border-slate-600"
+                >
+                  <option value="dnd-5e">D&D 5e</option>
+                  <option value="pathfinder-2e">Pathfinder 2e</option>
+                  <option value="pathfinder-1e">Pathfinder 1e</option>
+                  <option value="other">Other System (More coming soon!)</option>
+                </select>
+              </div>
             </div>
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => {
                   setShowCreateModal(false);
                   setNewCampaignName('');
+                  setNewCampaignSystem('dnd-5e');
                 }}
                 className="flex-1 bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded transition-colors text-white"
               >
