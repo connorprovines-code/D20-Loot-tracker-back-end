@@ -29,6 +29,7 @@ const App = ({ user, campaign, onBackToCampaigns, onLogout }) => {
   const [showDndApiSearch, setShowDndApiSearch] = useState(false);
   const [showPf2eApiSearch, setShowPf2eApiSearch] = useState(false);
   const [showPf1eApiSearch, setShowPf1eApiSearch] = useState(false);
+  const [apiSearchContext, setApiSearchContext] = useState(null); // 'add' or 'buy'
   const [buyingPlayer, setBuyingPlayer] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
   const [transferringFrom, setTransferringFrom] = useState(null);
@@ -456,6 +457,18 @@ const App = ({ user, campaign, onBackToCampaigns, onLogout }) => {
       rarity: apiItem.rarity,
       requires_attunement: apiItem.requires_attunement
     });
+
+    // Close search modal and reopen appropriate modal based on context
+    setShowDndApiSearch(false);
+    setShowPf2eApiSearch(false);
+    setShowPf1eApiSearch(false);
+
+    if (apiSearchContext === 'buy') {
+      setShowBuyModal(true);
+    } else {
+      setShowAddModal(true);
+    }
+    setApiSearchContext(null);
   };
 
   const handleAddItem = async () => {
@@ -1868,7 +1881,10 @@ const handleGoldEdit = async (entity, newValue) => {
             {/* D&D 5e API Search Button */}
             {campaign.game_system === 'dnd-5e' && (
               <button
-                onClick={() => setShowDndApiSearch(true)}
+                onClick={() => {
+                  setApiSearchContext('add');
+                  setShowDndApiSearch(true);
+                }}
                 className="w-full mb-4 bg-red-600 hover:bg-red-700 px-4 py-2 rounded transition-colors flex items-center justify-center gap-2"
               >
                 <Package size={18} />
@@ -1879,7 +1895,10 @@ const handleGoldEdit = async (entity, newValue) => {
             {/* Pathfinder 2e API Search Button */}
             {campaign.game_system === 'pathfinder-2e' && (
               <button
-                onClick={() => setShowPf2eApiSearch(true)}
+                onClick={() => {
+                  setApiSearchContext('add');
+                  setShowPf2eApiSearch(true);
+                }}
                 className="w-full mb-4 bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded transition-colors flex items-center justify-center gap-2"
               >
                 <Package size={18} />
@@ -1887,7 +1906,19 @@ const handleGoldEdit = async (entity, newValue) => {
               </button>
             )}
 
-{/* Pathfinder 1e API Search Button */}            {campaign.game_system === 'pathfinder-1e' && (              <button                onClick={() => setShowPf1eApiSearch(true)}                className="w-full mb-4 bg-amber-600 hover:bg-amber-700 px-4 py-2 rounded transition-colors flex items-center justify-center gap-2"              >                <Package size={18} />                Search Pathfinder 1e Database              </button>            )}
+            {/* Pathfinder 1e API Search Button */}
+            {campaign.game_system === 'pathfinder-1e' && (
+              <button
+                onClick={() => {
+                  setApiSearchContext('add');
+                  setShowPf1eApiSearch(true);
+                }}
+                className="w-full mb-4 bg-amber-600 hover:bg-amber-700 px-4 py-2 rounded transition-colors flex items-center justify-center gap-2"
+              >
+                <Package size={18} />
+                Search Pathfinder 1e Database
+              </button>
+            )}
             <div className="space-y-4">
               <div>
                 <label className="block text-sm mb-2">Item Name</label>
@@ -2156,7 +2187,10 @@ const handleGoldEdit = async (entity, newValue) => {
             {/* D&D 5e API Search Button */}
             {campaign.game_system === 'dnd-5e' && (
               <button
-                onClick={() => setShowDndApiSearch(true)}
+                onClick={() => {
+                  setApiSearchContext('buy');
+                  setShowDndApiSearch(true);
+                }}
                 className="w-full mb-4 bg-red-600 hover:bg-red-700 px-4 py-2 rounded transition-colors flex items-center justify-center gap-2"
               >
                 <Package size={18} />
@@ -2167,14 +2201,30 @@ const handleGoldEdit = async (entity, newValue) => {
             {/* Pathfinder 2e API Search Button */}
             {campaign.game_system === 'pathfinder-2e' && (
               <button
-                onClick={() => setShowPf2eApiSearch(true)}
+                onClick={() => {
+                  setApiSearchContext('buy');
+                  setShowPf2eApiSearch(true);
+                }}
                 className="w-full mb-4 bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded transition-colors flex items-center justify-center gap-2"
               >
                 <Package size={18} />
                 Search Pathfinder 2e Library
               </button>
             )}
-{/* Pathfinder 1e API Search Button */}            {campaign.game_system === 'pathfinder-1e' && (              <button                onClick={() => setShowPf1eApiSearch(true)}                className="w-full mb-4 bg-amber-600 hover:bg-amber-700 px-4 py-2 rounded transition-colors flex items-center justify-center gap-2"              >                <Package size={18} />                Search Pathfinder 1e Database              </button>            )}
+
+            {/* Pathfinder 1e API Search Button */}
+            {campaign.game_system === 'pathfinder-1e' && (
+              <button
+                onClick={() => {
+                  setApiSearchContext('buy');
+                  setShowPf1eApiSearch(true);
+                }}
+                className="w-full mb-4 bg-amber-600 hover:bg-amber-700 px-4 py-2 rounded transition-colors flex items-center justify-center gap-2"
+              >
+                <Package size={18} />
+                Search Pathfinder 1e Database
+              </button>
+            )}
 
             <div className="space-y-4">
               <div>
