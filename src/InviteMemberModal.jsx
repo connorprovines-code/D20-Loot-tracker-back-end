@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from './supabaseClient';
 import { X, Mail, Copy, Check } from 'lucide-react';
+import { sendCampaignInvite } from './services/emailService';
 
 const InviteMemberModal = ({ campaign, onClose, onInviteSent }) => {
   const [inviteeEmail, setInviteeEmail] = useState('');
@@ -59,11 +60,25 @@ const InviteMemberModal = ({ campaign, onClose, onInviteSent }) => {
       const link = `${window.location.origin}?invite=${data.invite_token}`;
       setInviteLink(link);
 
+      // Send email invitation
+      const emailResult = await sendCampaignInvite({
+        to: inviteeEmail.trim().toLowerCase(),
+        inviterName: currentUser.email,
+        campaignName: campaign.name,
+        role: inviteeRole,
+        inviteLink: link
+      });
+
       if (onInviteSent) {
         onInviteSent();
       }
 
-      alert(`Invite sent to ${inviteeEmail}!\n\nShare this link with them:\n${link}`);
+      if (emailResult.success) {
+        alert(`Invite email sent to ${inviteeEmail}!\n\nThey should receive it shortly. You can also share this link:\n${link}`);
+      } else {
+        alert(`Invite created but email failed to send.\n\nPlease share this link manually:\n${link}`);
+      }
+
       setInviteeEmail('');
     } catch (error) {
       console.error('Error sending invite:', error);
