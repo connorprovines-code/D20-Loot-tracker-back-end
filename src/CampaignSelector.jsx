@@ -39,27 +39,29 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
   const loadCampaigns = async () => {
     setLoading(true);
     try {
-      // Fetch all campaign memberships for this user (includes owned and shared)
-      const { data, error } = await supabase
-        .from('campaign_members')
-        .select(`
-          role,
-          joined_at,
-          campaigns (
-            id,
-            name,
-            owner_id,
-            game_system,
-            party_fund_gets_share,
-            created_at,
-            updated_at
-          )
-        `)
-        .eq('user_id', user.id)
-        .order('joined_at', { ascending: false });
+      // Use database function to bypass RLS and avoid recursion
+      const { data, error } = await supabase.rpc('get_user_campaigns', {
+        p_user_id: user.id
+      });
 
       if (error) throw error;
-      setCampaignMemberships(data || []);
+
+      // Transform flat response to match expected nested structure
+      const transformed = (data || []).map(row => ({
+        role: row.user_role,
+        joined_at: row.joined_at,
+        campaigns: {
+          id: row.campaign_id,
+          name: row.campaign_name,
+          owner_id: row.owner_id,
+          game_system: row.game_system,
+          party_fund_gets_share: row.party_fund_gets_share,
+          created_at: row.created_at,
+          updated_at: row.updated_at
+        }
+      }));
+
+      setCampaignMemberships(transformed);
     } catch (error) {
       console.error('Error loading campaigns:', error);
       alert('Error loading campaigns');
