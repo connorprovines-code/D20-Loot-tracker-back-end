@@ -17,18 +17,26 @@ CREATE TABLE IF NOT EXISTS campaign_members (
     CHECK (role IN ('owner', 'dm', 'player')),
   invited_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   joined_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-
-  -- Prevent duplicate memberships
   UNIQUE(campaign_id, user_id)
 );
 
 -- Indexes for performance
-CREATE INDEX idx_campaign_members_campaign ON campaign_members(campaign_id);
-CREATE INDEX idx_campaign_members_user ON campaign_members(user_id);
-CREATE INDEX idx_campaign_members_role ON campaign_members(campaign_id, role);
+CREATE INDEX IF NOT EXISTS idx_campaign_members_campaign ON campaign_members(campaign_id);
+CREATE INDEX IF NOT EXISTS idx_campaign_members_user ON campaign_members(user_id);
+CREATE INDEX IF NOT EXISTS idx_campaign_members_role ON campaign_members(campaign_id, role);
 
 -- Enable realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE campaign_members;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+    AND schemaname = 'public'
+    AND tablename = 'campaign_members'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE campaign_members;
+  END IF;
+END $$;
 
 COMMENT ON TABLE campaign_members IS 'Tracks user membership and roles within campaigns';
 COMMENT ON COLUMN campaign_members.role IS 'owner: full control, dm: can edit campaign, player: view and interact';
@@ -51,18 +59,27 @@ CREATE TABLE IF NOT EXISTS campaign_invites (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   expires_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() + INTERVAL '7 days'),
 
-  -- Prevent duplicate pending invites
   UNIQUE(campaign_id, invitee_email, status)
 );
 
 -- Indexes for performance
-CREATE INDEX idx_campaign_invites_campaign ON campaign_invites(campaign_id);
-CREATE INDEX idx_campaign_invites_email ON campaign_invites(invitee_email);
-CREATE INDEX idx_campaign_invites_token ON campaign_invites(invite_token);
-CREATE INDEX idx_campaign_invites_status ON campaign_invites(status);
+CREATE INDEX IF NOT EXISTS idx_campaign_invites_campaign ON campaign_invites(campaign_id);
+CREATE INDEX IF NOT EXISTS idx_campaign_invites_email ON campaign_invites(invitee_email);
+CREATE INDEX IF NOT EXISTS idx_campaign_invites_token ON campaign_invites(invite_token);
+CREATE INDEX IF NOT EXISTS idx_campaign_invites_status ON campaign_invites(status);
 
 -- Enable realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE campaign_invites;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+    AND schemaname = 'public'
+    AND tablename = 'campaign_invites'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE campaign_invites;
+  END IF;
+END $$;
 
 COMMENT ON TABLE campaign_invites IS 'Pending campaign invitations sent to users';
 COMMENT ON COLUMN campaign_invites.invite_token IS 'Unique token for accepting invite via link';
@@ -485,6 +502,7 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS trigger_add_campaign_owner_as_member ON campaigns;
 CREATE TRIGGER trigger_add_campaign_owner_as_member
   AFTER INSERT ON campaigns
   FOR EACH ROW

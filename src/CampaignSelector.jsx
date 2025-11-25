@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
-import { Plus, LogOut, Trash2, Edit2, Check, X } from 'lucide-react';
+import { Plus, LogOut, Trash2, Edit2, Check, X, UserPlus, Users } from 'lucide-react';
+import InviteMemberModal from './InviteMemberModal';
+import ManageMembersModal from './ManageMembersModal';
 
 const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
-  const [campaigns, setCampaigns] = useState([]);
+  const [campaignMemberships, setCampaignMemberships] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newCampaignName, setNewCampaignName] = useState('');
@@ -11,13 +13,17 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editingName, setEditingName] = useState('');
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showManageMembersModal, setShowManageMembersModal] = useState(false);
+  const [selectedCampaignForModal, setSelectedCampaignForModal] = useState(null);
 
   useEffect(() => {
     loadCampaigns();
   }, []);
 
   const getSuggestedCampaignName = () => {
-    return `Campaign #${campaigns.length + 1}`;
+    const ownedCount = campaignMemberships.filter(m => m.role === 'owner').length;
+    return `Campaign #${ownedCount + 1}`;
   };
 
   const getSystemDisplayInfo = (system) => {
@@ -33,13 +39,27 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
   const loadCampaigns = async () => {
     setLoading(true);
     try {
+      // Fetch all campaign memberships for this user (includes owned and shared)
       const { data, error } = await supabase
-        .from('campaigns')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .from('campaign_members')
+        .select(`
+          role,
+          joined_at,
+          campaigns (
+            id,
+            name,
+            owner_id,
+            game_system,
+            party_fund_gets_share,
+            created_at,
+            updated_at
+          )
+        `)
+        .eq('user_id', user.id)
+        .order('joined_at', { ascending: false });
 
       if (error) throw error;
-      setCampaigns(data || []);
+      setCampaignMemberships(data || []);
     } catch (error) {
       console.error('Error loading campaigns:', error);
       alert('Error loading campaigns');
@@ -113,6 +133,158 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
     }
   };
 
+  const handleLeaveCampaign = async (campaignId) => {
+    if (!confirm('Are you sure you want to leave this campaign?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('campaign_members')
+        .delete()
+        .eq('campaign_id', campaignId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      await loadCampaigns();
+    } catch (error) {
+      console.error('Error leaving campaign:', error);
+      alert('Error leaving campaign');
+    }
+  };
+
+  const getRoleBadge = (role) => {
+    const badges = {
+      owner: { text: 'Owner', color: 'bg-cyan-600' },
+      dm: { text: 'DM', color: 'bg-purple-600' },
+      player: { text: 'Player', color: 'bg-slate-600' }
+    };
+    return badges[role] || badges.player;
+  };
+
+  const renderCampaignCard = (membership, isOwner) => {
+    const campaign = membership.campaigns;
+    const roleBadge = getRoleBadge(membership.role);
+
+    return (
+      <div
+        key={campaign.id}
+        className="bg-slate-800 rounded-lg p-6 border border-slate-700 hover:border-cyan-600 transition-all"
+      >
+        <div className="flex justify-between items-center">
+          <div className="flex-1">
+            {editingId === campaign.id ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={editingName}
+                  onChange={(e) => setEditingName(e.target.value)}
+                  className="bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white"
+                  autoFocus
+                />
+                <button
+                  onClick={() => handleUpdateCampaign(campaign.id)}
+                  className="bg-green-600 hover:bg-green-700 p-2 rounded transition-colors"
+                >
+                  <Check size={18} />
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingId(null);
+                    setEditingName('');
+                  }}
+                  className="bg-slate-600 hover:bg-slate-700 p-2 rounded transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-3 mb-2">
+                  <h3 className="text-2xl font-bold text-white">{campaign.name}</h3>
+                  <span className={`${getSystemDisplayInfo(campaign.game_system).color} text-white text-xs px-2 py-1 rounded-full font-medium`}>
+                    {getSystemDisplayInfo(campaign.game_system).name}
+                  </span>
+                  <span className={`${roleBadge.color} text-white text-xs px-2 py-1 rounded-full font-medium`}>
+                    {roleBadge.text}
+                  </span>
+                </div>
+                <p className="text-sm text-slate-400">
+                  {isOwner ? 'Created' : 'Joined'} {new Date(isOwner ? campaign.created_at : membership.joined_at).toLocaleDateString()}
+                </p>
+              </>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            {editingId !== campaign.id && (
+              <>
+                {isOwner && (
+                  <>
+                    <button
+                      onClick={() => {
+                        setSelectedCampaignForModal(campaign);
+                        setShowInviteModal(true);
+                      }}
+                      className="text-green-400 hover:text-green-300 p-2 flex items-center gap-1"
+                      title="Invite Members"
+                    >
+                      <UserPlus size={20} />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedCampaignForModal(campaign);
+                        setShowManageMembersModal(true);
+                      }}
+                      className="text-purple-400 hover:text-purple-300 p-2 flex items-center gap-1"
+                      title="Manage Members"
+                    >
+                      <Users size={20} />
+                    </button>
+                  </>
+                )}
+                {(isOwner || membership.role === 'dm') && (
+                  <button
+                    onClick={() => {
+                      setEditingId(campaign.id);
+                      setEditingName(campaign.name);
+                    }}
+                    className="text-cyan-400 hover:text-cyan-300 p-2"
+                    title="Edit Campaign"
+                  >
+                    <Edit2 size={20} />
+                  </button>
+                )}
+                {isOwner ? (
+                  <button
+                    onClick={() => handleDeleteCampaign(campaign.id)}
+                    className="text-red-400 hover:text-red-300 p-2"
+                    title="Delete Campaign"
+                  >
+                    <Trash2 size={20} />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleLeaveCampaign(campaign.id)}
+                    className="text-orange-400 hover:text-orange-300 px-3 py-2 rounded text-sm"
+                    title="Leave Campaign"
+                  >
+                    Leave
+                  </button>
+                )}
+                <button
+                  onClick={() => onSelectCampaign(campaign)}
+                  className="bg-cyan-600 hover:bg-cyan-700 px-6 py-3 rounded-lg font-medium transition-colors text-white"
+                >
+                  Open Campaign
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 flex items-center justify-center">
@@ -154,91 +326,48 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
         </div>
 
         {/* Campaigns List */}
-        <div className="space-y-4">
-          {campaigns.length === 0 ? (
-            <div className="bg-slate-800 rounded-lg p-12 text-center text-slate-400 border border-slate-700">
-              <p className="text-lg mb-2">No campaigns yet</p>
-              <p className="text-sm">Create your first campaign to get started!</p>
-            </div>
-          ) : (
-            campaigns.map((campaign) => (
-              <div
-                key={campaign.id}
-                className="bg-slate-800 rounded-lg p-6 border border-slate-700 hover:border-cyan-600 transition-all"
-              >
-                <div className="flex justify-between items-center">
-                  <div className="flex-1">
-                    {editingId === campaign.id ? (
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={editingName}
-                          onChange={(e) => setEditingName(e.target.value)}
-                          className="bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white"
-                          autoFocus
-                        />
-                        <button
-                          onClick={() => handleUpdateCampaign(campaign.id)}
-                          className="bg-green-600 hover:bg-green-700 p-2 rounded transition-colors"
-                        >
-                          <Check size={18} />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setEditingId(null);
-                            setEditingName('');
-                          }}
-                          className="bg-slate-600 hover:bg-slate-700 p-2 rounded transition-colors"
-                        >
-                          <X size={18} />
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-2xl font-bold text-white">{campaign.name}</h3>
-                          <span className={`${getSystemDisplayInfo(campaign.game_system).color} text-white text-xs px-2 py-1 rounded-full font-medium`}>
-                            {getSystemDisplayInfo(campaign.game_system).name}
-                          </span>
-                        </div>
-                        <p className="text-sm text-slate-400">
-                          Created {new Date(campaign.created_at).toLocaleDateString()}
-                        </p>
-                      </>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {editingId !== campaign.id && (
-                      <>
-                        <button
-                          onClick={() => {
-                            setEditingId(campaign.id);
-                            setEditingName(campaign.name);
-                          }}
-                          className="text-cyan-400 hover:text-cyan-300 p-2"
-                        >
-                          <Edit2 size={20} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteCampaign(campaign.id)}
-                          className="text-red-400 hover:text-red-300 p-2"
-                        >
-                          <Trash2 size={20} />
-                        </button>
-                        <button
-                          onClick={() => onSelectCampaign(campaign)}
-                          className="bg-cyan-600 hover:bg-cyan-700 px-6 py-3 rounded-lg font-medium transition-colors text-white"
-                        >
-                          Open Campaign
-                        </button>
-                      </>
-                    )}
-                  </div>
+        {campaignMemberships.length === 0 ? (
+          <div className="bg-slate-800 rounded-lg p-12 text-center text-slate-400 border border-slate-700">
+            <p className="text-lg mb-2">No campaigns yet</p>
+            <p className="text-sm">Create your first campaign to get started!</p>
+          </div>
+        ) : (
+          <>
+            {/* My Campaigns (Owner) */}
+            {campaignMemberships.filter(m => m.role === 'owner').length > 0 && (
+              <div className="mb-8">
+                <h2 className="text-xl font-bold text-cyan-400 mb-4 flex items-center gap-2">
+                  My Campaigns
+                  <span className="text-sm text-slate-400 font-normal">
+                    ({campaignMemberships.filter(m => m.role === 'owner').length})
+                  </span>
+                </h2>
+                <div className="space-y-4">
+                  {campaignMemberships
+                    .filter(m => m.role === 'owner')
+                    .map((membership) => renderCampaignCard(membership, true))}
                 </div>
               </div>
-            ))
-          )}
-        </div>
+            )}
+
+            {/* Shared With Me */}
+            {campaignMemberships.filter(m => m.role !== 'owner').length > 0 && (
+              <div>
+                <h2 className="text-xl font-bold text-purple-400 mb-4 flex items-center gap-2">
+                  Shared With Me
+                  <span className="text-sm text-slate-400 font-normal">
+                    ({campaignMemberships.filter(m => m.role !== 'owner').length})
+                  </span>
+                </h2>
+                <div className="space-y-4">
+                  {campaignMemberships
+                    .filter(m => m.role !== 'owner')
+                    .map((membership) => renderCampaignCard(membership, false))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* Create Campaign Modal */}
@@ -298,6 +427,36 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Invite Member Modal */}
+      {showInviteModal && selectedCampaignForModal && (
+        <InviteMemberModal
+          campaign={selectedCampaignForModal}
+          onClose={() => {
+            setShowInviteModal(false);
+            setSelectedCampaignForModal(null);
+          }}
+          onInviteSent={() => {
+            // Optionally refresh data
+            loadCampaigns();
+          }}
+        />
+      )}
+
+      {/* Manage Members Modal */}
+      {showManageMembersModal && selectedCampaignForModal && (
+        <ManageMembersModal
+          campaign={selectedCampaignForModal}
+          currentUserId={user.id}
+          onClose={() => {
+            setShowManageMembersModal(false);
+            setSelectedCampaignForModal(null);
+          }}
+          onMembersChanged={() => {
+            loadCampaigns();
+          }}
+        />
       )}
     </div>
   );
