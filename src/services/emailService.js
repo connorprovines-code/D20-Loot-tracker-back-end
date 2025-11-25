@@ -1,7 +1,7 @@
 import { Resend } from 'resend';
 
 // Initialize Resend with API key from environment variable
-const resend = new Resend(import.meta.env.VITE_RESEND_API_KEY || 're_Weh8sUcE_Q4CowANwbWvZztSND6g4Fthf');
+const resend = new Resend(import.meta.env.VITE_RESEND_API_KEY);
 
 /**
  * Send a campaign invite email
