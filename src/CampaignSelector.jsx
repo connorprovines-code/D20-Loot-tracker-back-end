@@ -180,9 +180,10 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
     return (
       <div
         key={campaign.id}
-        className="bg-slate-800 rounded-lg p-6 border border-slate-700 hover:border-cyan-600 transition-all"
+        className="bg-slate-800 rounded-lg p-5 border border-slate-700 hover:border-cyan-600 transition-all"
       >
-        <div className="flex justify-between items-center">
+        {/* Header Row */}
+        <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
             {editingId === campaign.id ? (
               <div className="flex items-center gap-2">
@@ -190,12 +191,13 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
                   type="text"
                   value={editingName}
                   onChange={(e) => setEditingName(e.target.value)}
-                  className="bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white"
+                  className="bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white flex-1"
                   autoFocus
                 />
                 <button
                   onClick={() => handleUpdateCampaign(campaign.id)}
                   className="bg-green-600 hover:bg-green-700 p-2 rounded transition-colors"
+                  title="Save"
                 >
                   <Check size={18} />
                 </button>
@@ -205,100 +207,105 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
                     setEditingName('');
                   }}
                   className="bg-slate-600 hover:bg-slate-700 p-2 rounded transition-colors"
+                  title="Cancel"
                 >
                   <X size={18} />
                 </button>
               </div>
             ) : (
               <>
-                <div className="flex items-center gap-3 mb-2">
-                  <h3 className="text-2xl font-bold text-white">{campaign.name}</h3>
-                  <span className={`${getSystemDisplayInfo(campaign.game_system).color} text-white text-xs px-2 py-1 rounded-full font-medium`}>
+                <h3 className="text-2xl font-bold text-white mb-2">{campaign.name}</h3>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className={`${getSystemDisplayInfo(campaign.game_system).color} text-white px-2 py-0.5 rounded text-xs font-medium`}>
                     {getSystemDisplayInfo(campaign.game_system).name}
                   </span>
-                  <span className={`${roleBadge.color} text-white text-xs px-2 py-1 rounded-full font-medium`}>
+                  <span className="text-slate-500">•</span>
+                  <span className={`${roleBadge.color} text-white px-2 py-0.5 rounded text-xs font-medium`}>
                     {roleBadge.text}
                   </span>
+                  <span className="text-slate-500">•</span>
+                  <span className="text-slate-400">
+                    {isOwner ? 'Created' : 'Joined'} {new Date(isOwner ? campaign.created_at : membership.joined_at).toLocaleDateString()}
+                  </span>
                 </div>
-                <p className="text-sm text-slate-400">
-                  {isOwner ? 'Created' : 'Joined'} {new Date(isOwner ? campaign.created_at : membership.joined_at).toLocaleDateString()}
-                </p>
-              </>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-            {editingId !== campaign.id && (
-              <>
-                {isOwner && (
-                  <>
-                    <button
-                      onClick={() => {
-                        setSelectedCampaignForModal(campaign);
-                        setShowInviteModal(true);
-                      }}
-                      className="bg-green-600 hover:bg-green-700 px-3 py-2 rounded text-sm flex items-center gap-2 transition-colors text-white font-medium"
-                      title="Invite Members"
-                    >
-                      <UserPlus size={16} />
-                      <span className="hidden sm:inline">Invite</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedCampaignForModal(campaign);
-                        setShowManageMembersModal(true);
-                      }}
-                      className="bg-purple-600 hover:bg-purple-700 px-3 py-2 rounded text-sm flex items-center gap-2 transition-colors text-white font-medium"
-                      title="Manage Members"
-                    >
-                      <Users size={16} />
-                      <span className="hidden sm:inline">Manage</span>
-                    </button>
-                  </>
-                )}
-                {(isOwner || membership.role === 'dm') && (
-                  <button
-                    onClick={() => {
-                      setEditingId(campaign.id);
-                      setEditingName(campaign.name);
-                    }}
-                    className="bg-cyan-600 hover:bg-cyan-700 px-3 py-2 rounded text-sm flex items-center gap-2 transition-colors text-white font-medium"
-                    title="Edit Campaign"
-                  >
-                    <Edit2 size={16} />
-                    <span className="hidden sm:inline">Edit</span>
-                  </button>
-                )}
-                {isOwner ? (
-                  <button
-                    onClick={() => {
-                      setSelectedCampaignForModal(campaign);
-                      setShowDeleteModal(true);
-                    }}
-                    className="bg-red-600 hover:bg-red-700 px-3 py-2 rounded text-sm flex items-center gap-2 transition-colors text-white font-medium"
-                    title="Delete Campaign"
-                  >
-                    <Trash2 size={16} />
-                    <span className="hidden sm:inline">Delete</span>
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleLeaveCampaign(campaign.id)}
-                    className="bg-orange-600 hover:bg-orange-700 px-3 py-2 rounded text-sm flex items-center gap-2 transition-colors text-white font-medium"
-                    title="Leave Campaign"
-                  >
-                    Leave
-                  </button>
-                )}
-                <button
-                  onClick={() => onSelectCampaign(campaign)}
-                  className="bg-cyan-600 hover:bg-cyan-700 px-6 py-3 rounded-lg font-medium transition-colors text-white"
-                >
-                  Open Campaign
-                </button>
               </>
             )}
           </div>
         </div>
+
+        {/* Actions Row */}
+        {editingId !== campaign.id && (
+          <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-700">
+            <div className="flex items-center gap-2">
+              {isOwner && (
+                <>
+                  <button
+                    onClick={() => {
+                      setSelectedCampaignForModal(campaign);
+                      setShowInviteModal(true);
+                    }}
+                    className="bg-green-600/10 hover:bg-green-600/20 border border-green-600/30 text-green-400 px-3 py-1.5 rounded text-sm flex items-center gap-1.5 transition-colors font-medium"
+                    title="Invite Members"
+                  >
+                    <UserPlus size={14} />
+                    <span>Invite</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectedCampaignForModal(campaign);
+                      setShowManageMembersModal(true);
+                    }}
+                    className="bg-purple-600/10 hover:bg-purple-600/20 border border-purple-600/30 text-purple-400 px-3 py-1.5 rounded text-sm flex items-center gap-1.5 transition-colors font-medium"
+                    title="Manage Members"
+                  >
+                    <Users size={14} />
+                    <span>Manage</span>
+                  </button>
+                </>
+              )}
+              {(isOwner || membership.role === 'dm') && (
+                <button
+                  onClick={() => {
+                    setEditingId(campaign.id);
+                    setEditingName(campaign.name);
+                  }}
+                  className="bg-cyan-600/10 hover:bg-cyan-600/20 border border-cyan-600/30 text-cyan-400 px-3 py-1.5 rounded text-sm flex items-center gap-1.5 transition-colors font-medium"
+                  title="Edit Campaign Name"
+                >
+                  <Edit2 size={14} />
+                  <span>Edit</span>
+                </button>
+              )}
+              {isOwner ? (
+                <button
+                  onClick={() => {
+                    setSelectedCampaignForModal(campaign);
+                    setShowDeleteModal(true);
+                  }}
+                  className="bg-red-600/10 hover:bg-red-600/20 border border-red-600/30 text-red-400 px-3 py-1.5 rounded text-sm flex items-center gap-1.5 transition-colors font-medium"
+                  title="Delete Campaign"
+                >
+                  <Trash2 size={14} />
+                  <span>Delete</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => handleLeaveCampaign(campaign.id)}
+                  className="bg-orange-600/10 hover:bg-orange-600/20 border border-orange-600/30 text-orange-400 px-3 py-1.5 rounded text-sm flex items-center gap-1.5 transition-colors font-medium"
+                  title="Leave Campaign"
+                >
+                  Leave
+                </button>
+              )}
+            </div>
+            <button
+              onClick={() => onSelectCampaign(campaign)}
+              className="bg-cyan-600 hover:bg-cyan-700 px-6 py-2 rounded-lg font-medium transition-colors text-white"
+            >
+              Open Campaign
+            </button>
+          </div>
+        )}
       </div>
     );
   };
