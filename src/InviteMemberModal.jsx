@@ -122,13 +122,13 @@ const InviteMemberModal = ({ campaign, onClose, onInviteSent }) => {
               onChange={(e) => setInviteeRole(e.target.value)}
               className="w-full bg-slate-700 rounded px-4 py-2 text-white border border-slate-600 focus:border-green-500 focus:outline-none"
             >
-              <option value="player">Player (View only)</option>
-              <option value="dm">DM (Can edit campaign)</option>
+              <option value="player">Player (Collaborator)</option>
+              <option value="dm">DM (Full permissions)</option>
             </select>
             <p className="text-xs text-slate-400 mt-1">
               {inviteeRole === 'player'
-                ? 'Players can view campaign data but cannot edit'
-                : 'DMs can edit items, players, and campaign settings'}
+                ? 'Players can edit all campaign content'
+                : 'DMs have full permissions including managing members'}
             </p>
           </div>
 
