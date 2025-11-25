@@ -16,6 +16,8 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showManageMembersModal, setShowManageMembersModal] = useState(false);
   const [selectedCampaignForModal, setSelectedCampaignForModal] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
 
   useEffect(() => {
     loadCampaigns();
@@ -97,8 +99,12 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
     }
   };
 
-  const handleDeleteCampaign = async (campaignId) => {
-    if (!confirm('Are you sure? This will delete all players, items, and transactions in this campaign.')) {
+  const handleDeleteCampaign = async () => {
+    const campaignId = selectedCampaignForModal?.id;
+    if (!campaignId) return;
+
+    if (deleteConfirmation !== selectedCampaignForModal.name) {
+      alert('Campaign name does not match. Please type the exact campaign name to confirm deletion.');
       return;
     }
 
@@ -110,9 +116,12 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
 
       if (error) throw error;
       await loadCampaigns();
+      setShowDeleteModal(false);
+      setSelectedCampaignForModal(null);
+      setDeleteConfirmation('');
     } catch (error) {
       console.error('Error deleting campaign:', error);
-      alert('Error deleting campaign');
+      alert('Error deleting campaign: ' + error.message);
     }
   };
 
@@ -227,20 +236,22 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
                         setSelectedCampaignForModal(campaign);
                         setShowInviteModal(true);
                       }}
-                      className="text-green-400 hover:text-green-300 p-2 flex items-center gap-1"
+                      className="bg-green-600 hover:bg-green-700 px-3 py-2 rounded text-sm flex items-center gap-2 transition-colors text-white font-medium"
                       title="Invite Members"
                     >
-                      <UserPlus size={20} />
+                      <UserPlus size={16} />
+                      <span className="hidden sm:inline">Invite</span>
                     </button>
                     <button
                       onClick={() => {
                         setSelectedCampaignForModal(campaign);
                         setShowManageMembersModal(true);
                       }}
-                      className="text-purple-400 hover:text-purple-300 p-2 flex items-center gap-1"
+                      className="bg-purple-600 hover:bg-purple-700 px-3 py-2 rounded text-sm flex items-center gap-2 transition-colors text-white font-medium"
                       title="Manage Members"
                     >
-                      <Users size={20} />
+                      <Users size={16} />
+                      <span className="hidden sm:inline">Manage</span>
                     </button>
                   </>
                 )}
@@ -250,24 +261,29 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
                       setEditingId(campaign.id);
                       setEditingName(campaign.name);
                     }}
-                    className="text-cyan-400 hover:text-cyan-300 p-2"
+                    className="bg-cyan-600 hover:bg-cyan-700 px-3 py-2 rounded text-sm flex items-center gap-2 transition-colors text-white font-medium"
                     title="Edit Campaign"
                   >
-                    <Edit2 size={20} />
+                    <Edit2 size={16} />
+                    <span className="hidden sm:inline">Edit</span>
                   </button>
                 )}
                 {isOwner ? (
                   <button
-                    onClick={() => handleDeleteCampaign(campaign.id)}
-                    className="text-red-400 hover:text-red-300 p-2"
+                    onClick={() => {
+                      setSelectedCampaignForModal(campaign);
+                      setShowDeleteModal(true);
+                    }}
+                    className="bg-red-600 hover:bg-red-700 px-3 py-2 rounded text-sm flex items-center gap-2 transition-colors text-white font-medium"
                     title="Delete Campaign"
                   >
-                    <Trash2 size={20} />
+                    <Trash2 size={16} />
+                    <span className="hidden sm:inline">Delete</span>
                   </button>
                 ) : (
                   <button
                     onClick={() => handleLeaveCampaign(campaign.id)}
-                    className="text-orange-400 hover:text-orange-300 px-3 py-2 rounded text-sm"
+                    className="bg-orange-600 hover:bg-orange-700 px-3 py-2 rounded text-sm flex items-center gap-2 transition-colors text-white font-medium"
                     title="Leave Campaign"
                   >
                     Leave
@@ -459,6 +475,65 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
             loadCampaigns();
           }}
         />
+      )}
+
+      {/* Delete Campaign Confirmation Modal */}
+      {showDeleteModal && selectedCampaignForModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+          <div className="bg-slate-800 rounded-lg p-6 max-w-md w-full border border-red-700">
+            <div className="flex items-center gap-3 mb-4">
+              <Trash2 size={24} className="text-red-400" />
+              <h3 className="text-xl font-bold text-white">Delete Campaign</h3>
+            </div>
+
+            <div className="mb-4 p-4 bg-red-900 bg-opacity-30 border border-red-700 rounded">
+              <p className="text-red-200 font-medium mb-2">⚠️ Warning: This action cannot be undone!</p>
+              <p className="text-red-300 text-sm">
+                This will permanently delete:
+              </p>
+              <ul className="text-red-300 text-sm list-disc list-inside mt-2 space-y-1">
+                <li>All players in this campaign</li>
+                <li>All inventory items</li>
+                <li>All transaction history</li>
+                <li>All campaign settings and data</li>
+              </ul>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm text-slate-300 mb-2">
+                Type the campaign name <span className="text-red-400 font-bold">"{selectedCampaignForModal.name}"</span> to confirm deletion:
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmation}
+                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                className="w-full bg-slate-700 rounded px-4 py-2 text-white border border-slate-600 focus:border-red-500 focus:outline-none"
+                placeholder={selectedCampaignForModal.name}
+                autoFocus
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setSelectedCampaignForModal(null);
+                  setDeleteConfirmation('');
+                }}
+                className="flex-1 bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded transition-colors text-white"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteCampaign}
+                disabled={deleteConfirmation !== selectedCampaignForModal.name}
+                className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-slate-600 disabled:cursor-not-allowed px-4 py-2 rounded transition-colors text-white font-medium"
+              >
+                Delete Forever
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
