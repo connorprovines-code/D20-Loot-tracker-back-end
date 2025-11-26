@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from './supabaseClient';
-import { Dices, LogIn, UserPlus, Mail, Lock } from 'lucide-react';
+import { LogIn, UserPlus, Mail, Lock } from 'lucide-react';
 
 const Auth = ({ onAuthSuccess }) => {
   const [loading, setLoading] = useState(false);
@@ -82,7 +82,7 @@ const Auth = ({ onAuthSuccess }) => {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <Dices size={64} className="text-cyan-400" />
+            <img src="/favicon.png" alt="D20 Loot Tracker" className="w-24 h-24 rounded-2xl shadow-lg" />
           </div>
           <h1 className="text-4xl font-bold text-white mb-2">
             Loot Tracker for D20 TTRPGs

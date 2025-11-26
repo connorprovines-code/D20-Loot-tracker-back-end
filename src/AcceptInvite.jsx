@@ -170,8 +170,22 @@ const AcceptInvite = ({ inviteToken, user, onAccepted, onDeclined }) => {
     );
   }
 
-  if (!inviteInfo) {
-    return null;
+  if (!inviteInfo || !inviteInfo.campaigns) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 flex items-center justify-center p-6">
+        <div className="bg-slate-800 rounded-lg p-8 border border-red-700 text-center max-w-md w-full">
+          <XCircle className="text-red-400 mx-auto mb-4" size={48} />
+          <h2 className="text-2xl font-bold text-white mb-2">Invalid Invite</h2>
+          <p className="text-slate-300 mb-6">The campaign associated with this invite could not be found.</p>
+          <button
+            onClick={() => window.location.href = '/'}
+            className="bg-cyan-600 hover:bg-cyan-700 px-6 py-3 rounded-lg text-white font-medium transition-colors"
+          >
+            Go to Campaigns
+          </button>
+        </div>
+      </div>
+    );
   }
 
   const systemInfo = getSystemDisplayInfo(inviteInfo.campaigns.game_system);
