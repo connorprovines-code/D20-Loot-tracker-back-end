@@ -41,7 +41,7 @@ export default async function handler(req, res) {
     const roleText = role === 'dm' ? 'Dungeon Master' : 'Player';
 
     const { data, error } = await resend.emails.send({
-      from: 'D20 Loot Tracker <onboarding@resend.dev>',
+      from: 'D20 Loot Tracker <noreply@d20-loot-tracker.com>',
       to: to,
       subject: `You're invited to join "${campaignName}"!`,
       html: `
