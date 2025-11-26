@@ -19,46 +19,37 @@ const AcceptInvite = ({ inviteToken, user, onAccepted, onDeclined }) => {
     setError(null);
 
     try {
-      // Fetch invite details
+      // Use RPC function to get campaign info for the invite
+      // This bypasses RLS in a controlled way
       const { data, error } = await supabase
-        .from('campaign_invites')
-        .select(`
-          id,
-          role,
-          status,
-          expires_at,
-          campaigns (
-            id,
-            name,
-            game_system
-          )
-        `)
-        .eq('invite_token', inviteToken)
-        .eq('invitee_email', user.email)
+        .rpc('get_invite_campaign_info', {
+          p_invite_token: inviteToken
+        })
         .single();
 
       if (error) {
-        if (error.code === 'PGRST116') {
-          setError('Invite not found or not addressed to you');
-        } else {
-          throw error;
+        console.error('RPC error:', error);
+        setError('Invite not found or not addressed to you');
+        return;
+      }
+
+      if (!data) {
+        setError('Invite not found, has expired, or has already been used');
+        return;
+      }
+
+      // Transform the RPC result to match expected format
+      setInviteInfo({
+        id: inviteToken,
+        role: data.invite_role,
+        status: data.invite_status,
+        expires_at: data.invite_expires_at,
+        campaigns: {
+          id: data.campaign_id,
+          name: data.campaign_name,
+          game_system: data.game_system
         }
-        return;
-      }
-
-      // Check if expired
-      if (new Date(data.expires_at) < new Date()) {
-        setError('This invite has expired');
-        return;
-      }
-
-      // Check status
-      if (data.status !== 'pending') {
-        setError(`This invite has already been ${data.status}`);
-        return;
-      }
-
-      setInviteInfo(data);
+      });
     } catch (err) {
       console.error('Error loading invite:', err);
       setError('Error loading invite information');

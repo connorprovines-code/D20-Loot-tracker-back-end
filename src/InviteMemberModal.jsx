@@ -147,7 +147,7 @@ const InviteMemberModal = ({ campaign, onClose, onInviteSent }) => {
                 emailSuccess ? 'text-green-200' : 'text-yellow-200'
               }`}>
                 {emailSuccess ? (
-                  <>✓ Email sent successfully!</</>
+                  <>✓ Email sent successfully!</>
                 ) : (
                   <>⚠ Invite created, but email failed to send</>
                 )}
