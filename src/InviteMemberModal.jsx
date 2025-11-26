@@ -11,17 +11,20 @@ const InviteMemberModal = ({ campaign, onClose, onInviteSent }) => {
   const [copied, setCopied] = useState(false);
   const [inviteSent, setInviteSent] = useState(false);
   const [emailSuccess, setEmailSuccess] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSendInvite = async () => {
+    setError('');
+
     if (!inviteeEmail.trim()) {
-      alert('Please enter an email address');
+      setError('Please enter an email address');
       return;
     }
 
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(inviteeEmail)) {
-      alert('Please enter a valid email address');
+      setError('Please enter a valid email address');
       return;
     }
 
@@ -31,12 +34,12 @@ const InviteMemberModal = ({ campaign, onClose, onInviteSent }) => {
       const currentUser = session?.session?.user;
 
       if (!currentUser) {
-        alert('You must be logged in to send invites');
+        setError('You must be logged in to send invites');
         return;
       }
 
       // Create invite
-      const { data, error } = await supabase
+      const { data, error: inviteError } = await supabase
         .from('campaign_invites')
         .insert({
           campaign_id: campaign.id,
@@ -48,12 +51,12 @@ const InviteMemberModal = ({ campaign, onClose, onInviteSent }) => {
         .select()
         .single();
 
-      if (error) {
-        if (error.code === '23505') {
+      if (inviteError) {
+        if (inviteError.code === '23505') {
           // Unique constraint violation - invite already exists
-          alert('An invite has already been sent to this email for this campaign');
+          setError('An invite has already been sent to this email for this campaign');
         } else {
-          throw error;
+          throw inviteError;
         }
         return;
       }
@@ -80,7 +83,7 @@ const InviteMemberModal = ({ campaign, onClose, onInviteSent }) => {
       setEmailSuccess(emailResult.success);
     } catch (error) {
       console.error('Error sending invite:', error);
-      alert('Error sending invite: ' + error.message);
+      setError('Error sending invite: ' + error.message);
     } finally {
       setSending(false);
     }
@@ -94,6 +97,7 @@ const InviteMemberModal = ({ campaign, onClose, onInviteSent }) => {
     setInviteSent(false);
     setEmailSuccess(false);
     setCopied(false);
+    setError('');
     onClose();
   };
 
@@ -194,13 +198,22 @@ const InviteMemberModal = ({ campaign, onClose, onInviteSent }) => {
         ) : (
           // Initial state - show form
           <>
+            {error && (
+              <div className="mb-4 p-3 bg-red-900/30 border border-red-700 rounded-lg">
+                <p className="text-red-200 text-sm">{error}</p>
+              </div>
+            )}
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm text-slate-300 mb-2">Email Address</label>
                 <input
                   type="email"
                   value={inviteeEmail}
-                  onChange={(e) => setInviteeEmail(e.target.value)}
+                  onChange={(e) => {
+                    setInviteeEmail(e.target.value);
+                    setError(''); // Clear error when user types
+                  }}
                   onKeyPress={(e) => {
                     if (e.key === 'Enter' && !sending && inviteeEmail.trim()) {
                       handleSendInvite();
