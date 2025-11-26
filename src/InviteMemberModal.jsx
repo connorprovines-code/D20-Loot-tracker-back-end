@@ -152,7 +152,7 @@ const InviteMemberModal = ({ campaign, onClose, onInviteSent }) => {
                 emailSuccess ? 'text-green-300' : 'text-yellow-300'
               }`}>
                 {emailSuccess ? (
-                  <>The invitation has been sent to <strong>{inviteeEmail}</strong>. They should receive it shortly.</>
+                  <>The invitation has been sent to <strong>{inviteeEmail}</strong>. They should receive it shortly. <span className="block mt-1 text-xs opacity-80">Note: The email may arrive in their spam folder.</span></>
                 ) : (
                   <>Please share the invite link below manually with <strong>{inviteeEmail}</strong>.</>
                 )}

@@ -55,7 +55,7 @@ export default async function handler(req, res) {
 
             <!-- Header -->
             <div style="background: linear-gradient(135deg, #0f172a 0%, #312e81 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
-              <h1 style="color: #22d3ee; margin: 0; font-size: 28px;">🎲 D20 Loot Tracker</h1>
+              <h1 style="color: #22d3ee; margin: 0; font-size: 28px;">📦 D20 Loot Tracker</h1>
               <p style="color: #cbd5e1; margin: 10px 0 0 0; font-size: 14px;">Campaign Collaboration Platform</p>
             </div>
 
