@@ -6,18 +6,33 @@
 -- =====================================================
 -- FIX 1: Auth Users Access for Invites
 -- =====================================================
--- The problem: Policies are checking auth.users which requires special access
--- Solution: Use auth.uid() and auth.email() functions instead
+-- PROBLEM: Direct auth.users queries in RLS get "permission denied"
+-- SOLUTION: Use SECURITY DEFINER function
 
--- Drop the problematic invite view policy
+-- Create helper function to get current user email safely
+CREATE OR REPLACE FUNCTION get_current_user_email()
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+STABLE
+AS $$
+BEGIN
+  RETURN (SELECT email FROM auth.users WHERE id = auth.uid());
+END;
+$$;
+
+-- Drop ALL existing campaign_invites policies
 DROP POLICY IF EXISTS "view_invites" ON campaign_invites;
+DROP POLICY IF EXISTS "insert_invites" ON campaign_invites;
+DROP POLICY IF EXISTS "update_invites" ON campaign_invites;
+DROP POLICY IF EXISTS "delete_invites" ON campaign_invites;
 
--- Recreate with proper email lookup (auth.email() doesn't exist!)
+-- Recreate with SECURITY DEFINER function
 CREATE POLICY "view_invites"
   ON campaign_invites FOR SELECT
   USING (
-    -- Can see invites sent to your email (lookup from auth.users)
-    invitee_email = (SELECT email FROM auth.users WHERE id = auth.uid())
+    -- Can see invites sent to your email (uses SECURITY DEFINER function)
+    invitee_email = get_current_user_email()
     OR inviter_id = auth.uid()
     OR campaign_id IN (
       SELECT id FROM campaigns WHERE owner_id = auth.uid()
@@ -26,6 +41,37 @@ CREATE POLICY "view_invites"
       SELECT campaign_id FROM campaign_members
       WHERE user_id = auth.uid()
       AND role IN ('dm', 'owner')
+    )
+  );
+
+-- Insert: Owners and DMs can create invites
+CREATE POLICY "insert_invites"
+  ON campaign_invites FOR INSERT
+  WITH CHECK (
+    campaign_id IN (
+      SELECT id FROM campaigns WHERE owner_id = auth.uid()
+    )
+    OR campaign_id IN (
+      SELECT campaign_id FROM campaign_members
+      WHERE user_id = auth.uid()
+      AND role IN ('dm', 'owner')
+    )
+  );
+
+-- Update: Can update invites sent to you
+CREATE POLICY "update_invites"
+  ON campaign_invites FOR UPDATE
+  USING (
+    invitee_email = get_current_user_email()
+  );
+
+-- Delete: Inviters and campaign owners can delete
+CREATE POLICY "delete_invites"
+  ON campaign_invites FOR DELETE
+  USING (
+    inviter_id = auth.uid()
+    OR campaign_id IN (
+      SELECT id FROM campaigns WHERE owner_id = auth.uid()
     )
   );
 
@@ -111,7 +157,11 @@ CREATE POLICY "Campaign members can create transactions"
 -- VERIFICATION
 -- =====================================================
 
-COMMENT ON POLICY "view_invites" ON campaign_invites IS 'Fixed: Uses proper email lookup from auth.users table';
+COMMENT ON FUNCTION get_current_user_email IS 'SECURITY DEFINER function to safely access auth.users email';
+COMMENT ON POLICY "view_invites" ON campaign_invites IS 'Fixed: Uses SECURITY DEFINER function';
+COMMENT ON POLICY "insert_invites" ON campaign_invites IS 'Owners and DMs can create invites';
+COMMENT ON POLICY "update_invites" ON campaign_invites IS 'Users can update invites sent to them';
+COMMENT ON POLICY "delete_invites" ON campaign_invites IS 'Inviters and owners can delete invites';
 COMMENT ON POLICY "update_campaigns" ON campaigns IS 'Updated: All campaign members can now edit';
 COMMENT ON TABLE players IS 'Updated: All campaign members can manage';
 COMMENT ON TABLE items IS 'Updated: All campaign members can manage';
