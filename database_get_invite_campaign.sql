@@ -21,7 +21,14 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 SECURITY DEFINER -- Run with elevated privileges
 AS $$
+DECLARE
+  v_user_id UUID;
+  v_user_email VARCHAR(255);
 BEGIN
+  -- Get current user
+  v_user_id := auth.uid();
+  SELECT email INTO v_user_email FROM auth.users WHERE id = v_user_id;
+
   -- Return campaign info only if:
   -- 1. Invite exists and is addressed to current user
   -- 2. Invite is still pending
@@ -37,7 +44,7 @@ BEGIN
   FROM campaign_invites ci
   JOIN campaigns c ON c.id = ci.campaign_id
   WHERE ci.invite_token = p_invite_token
-    AND ci.invitee_email = auth.email()
+    AND ci.invitee_email = v_user_email
     AND ci.status = 'pending'
     AND ci.expires_at > NOW();
 END;
