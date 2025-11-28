@@ -12,12 +12,12 @@
 -- Drop the problematic invite view policy
 DROP POLICY IF EXISTS "view_invites" ON campaign_invites;
 
--- Recreate with SECURITY DEFINER function approach
+-- Recreate with proper email lookup (auth.email() doesn't exist!)
 CREATE POLICY "view_invites"
   ON campaign_invites FOR SELECT
   USING (
-    -- Can see invites sent to your email (use current user's email directly)
-    invitee_email = auth.email()
+    -- Can see invites sent to your email (lookup from auth.users)
+    invitee_email = (SELECT email FROM auth.users WHERE id = auth.uid())
     OR inviter_id = auth.uid()
     OR campaign_id IN (
       SELECT id FROM campaigns WHERE owner_id = auth.uid()
@@ -111,7 +111,7 @@ CREATE POLICY "Campaign members can create transactions"
 -- VERIFICATION
 -- =====================================================
 
-COMMENT ON POLICY "view_invites" ON campaign_invites IS 'Fixed: Uses auth.email() instead of auth.users table';
+COMMENT ON POLICY "view_invites" ON campaign_invites IS 'Fixed: Uses proper email lookup from auth.users table';
 COMMENT ON POLICY "update_campaigns" ON campaigns IS 'Updated: All campaign members can now edit';
 COMMENT ON TABLE players IS 'Updated: All campaign members can manage';
 COMMENT ON TABLE items IS 'Updated: All campaign members can manage';
