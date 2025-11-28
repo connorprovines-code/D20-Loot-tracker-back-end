@@ -74,10 +74,6 @@ const InviteMemberModal = ({ campaign, onClose, onInviteSent }) => {
         inviteLink: link
       });
 
-      if (onInviteSent) {
-        onInviteSent();
-      }
-
       // Set success state
       setInviteSent(true);
       setEmailSuccess(emailResult.success);
@@ -90,6 +86,11 @@ const InviteMemberModal = ({ campaign, onClose, onInviteSent }) => {
   };
 
   const handleClose = () => {
+    // If an invite was sent, notify parent to refresh
+    if (inviteSent && onInviteSent) {
+      onInviteSent();
+    }
+
     // Reset all state when closing
     setInviteeEmail('');
     setInviteeRole('player');
