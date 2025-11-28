@@ -24,14 +24,33 @@ const ManageMembersModal = ({ campaign, currentUserId, onClose, onMembersChanged
           invited_by
         `)
         .eq('campaign_id', campaign.id)
-        .order('role'); // Owner first, then DM, then player
+        .order('role'); // Owner first, then contributor, then viewer
 
       if (error) throw error;
 
-      // Get user emails (we can't directly join auth.users, so we need to fetch separately)
-      // For now, we'll show user IDs. In production, you'd want to create a profiles table
-      // or use Supabase's admin API to get user info
-      setMembers(data || []);
+      // Fetch user emails for all members
+      const membersWithEmails = await Promise.all(
+        (data || []).map(async (member) => {
+          try {
+            // Call RPC function to get email safely
+            const { data: emailData, error: emailError } = await supabase
+              .rpc('get_user_email_by_id', { p_user_id: member.user_id });
+
+            return {
+              ...member,
+              email: emailData || 'Unknown user'
+            };
+          } catch (err) {
+            console.error('Error fetching email for user:', member.user_id, err);
+            return {
+              ...member,
+              email: `User ${member.user_id.substring(0, 8)}...`
+            };
+          }
+        })
+      );
+
+      setMembers(membersWithEmails);
     } catch (error) {
       console.error('Error loading members:', error);
       alert('Error loading members');
@@ -74,8 +93,8 @@ const ManageMembersModal = ({ campaign, currentUserId, onClose, onMembersChanged
       return;
     }
 
-    // Cycle through roles: player -> dm -> player
-    const newRole = currentRole === 'player' ? 'dm' : 'player';
+    // Cycle through roles: viewer -> contributor -> viewer
+    const newRole = currentRole === 'viewer' ? 'contributor' : 'viewer';
 
     try {
       const { error } = await supabase
@@ -99,9 +118,9 @@ const ManageMembersModal = ({ campaign, currentUserId, onClose, onMembersChanged
     switch (role) {
       case 'owner':
         return <Crown size={16} className="text-cyan-400" />;
-      case 'dm':
+      case 'contributor':
         return <Shield size={16} className="text-purple-400" />;
-      case 'player':
+      case 'viewer':
         return <Eye size={16} className="text-slate-400" />;
       default:
         return null;
@@ -111,10 +130,10 @@ const ManageMembersModal = ({ campaign, currentUserId, onClose, onMembersChanged
   const getRoleBadge = (role) => {
     const badges = {
       owner: { text: 'Owner', color: 'bg-cyan-600' },
-      dm: { text: 'DM', color: 'bg-purple-600' },
-      player: { text: 'Player', color: 'bg-slate-600' }
+      contributor: { text: 'Contributor', color: 'bg-purple-600' },
+      viewer: { text: 'Viewer', color: 'bg-slate-600' }
     };
-    return badges[role] || badges.player;
+    return badges[role] || badges.viewer;
   };
 
   return (
@@ -154,7 +173,8 @@ const ManageMembersModal = ({ campaign, currentUserId, onClose, onMembersChanged
                     <div>
                       <div className="flex items-center gap-2">
                         <p className="text-white font-medium">
-                          {member.user_id === currentUserId ? 'You' : `User ${member.user_id.substring(0, 8)}...`}
+                          {member.email || `User ${member.user_id.substring(0, 8)}...`}
+                          {member.user_id === currentUserId && <span className="text-cyan-400 ml-1">(You)</span>}
                         </p>
                         <span className={`${roleBadge.color} text-white text-xs px-2 py-1 rounded-full font-medium`}>
                           {roleBadge.text}
@@ -174,7 +194,7 @@ const ManageMembersModal = ({ campaign, currentUserId, onClose, onMembersChanged
                           className="bg-purple-600 hover:bg-purple-700 px-3 py-2 rounded text-sm transition-colors text-white"
                           title="Change Role"
                         >
-                          {member.role === 'player' ? 'Promote to DM' : 'Demote to Player'}
+                          {member.role === 'viewer' ? 'Make Contributor' : 'Make Viewer'}
                         </button>
                         {!isCurrentUser && (
                           <button
@@ -208,8 +228,8 @@ const ManageMembersModal = ({ campaign, currentUserId, onClose, onMembersChanged
 
         <div className="mt-4 text-xs text-slate-400 space-y-1">
           <p><strong>Owner:</strong> Full control, can delete campaign and manage all members</p>
-          <p><strong>DM:</strong> Can edit campaign, manage items/players, and invite members</p>
-          <p><strong>Player:</strong> View-only access to campaign data</p>
+          <p><strong>Contributor:</strong> Can edit all campaign content, manage items/players, and send invites</p>
+          <p><strong>Viewer:</strong> Read-only access to campaign data</p>
         </div>
       </div>
     </div>
