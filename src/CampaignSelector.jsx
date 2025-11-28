@@ -167,10 +167,10 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
   const getRoleBadge = (role) => {
     const badges = {
       owner: { text: 'Owner', color: 'bg-cyan-600' },
-      dm: { text: 'DM', color: 'bg-purple-600' },
-      player: { text: 'Player', color: 'bg-slate-600' }
+      contributor: { text: 'Contributor', color: 'bg-purple-600' },
+      viewer: { text: 'Viewer', color: 'bg-slate-600' }
     };
-    return badges[role] || badges.player;
+    return badges[role] || badges.viewer;
   };
 
   const renderCampaignCard = (membership, isOwner) => {

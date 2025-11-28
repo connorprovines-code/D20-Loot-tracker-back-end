@@ -5,7 +5,7 @@ import { sendCampaignInvite } from './services/emailService';
 
 const InviteMemberModal = ({ campaign, onClose, onInviteSent }) => {
   const [inviteeEmail, setInviteeEmail] = useState('');
-  const [inviteeRole, setInviteeRole] = useState('player');
+  const [inviteeRole, setInviteeRole] = useState('contributor');
   const [sending, setSending] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
   const [copied, setCopied] = useState(false);
@@ -93,7 +93,7 @@ const InviteMemberModal = ({ campaign, onClose, onInviteSent }) => {
 
     // Reset all state when closing
     setInviteeEmail('');
-    setInviteeRole('player');
+    setInviteeRole('contributor');
     setInviteLink('');
     setInviteSent(false);
     setEmailSuccess(false);
@@ -235,13 +235,13 @@ const InviteMemberModal = ({ campaign, onClose, onInviteSent }) => {
                   className="w-full bg-slate-700 rounded px-4 py-2 text-white border border-slate-600 focus:border-green-500 focus:outline-none"
                   disabled={sending}
                 >
-                  <option value="player">Player (Collaborator)</option>
-                  <option value="dm">DM (Full permissions)</option>
+                  <option value="contributor">Contributor (Can edit campaign)</option>
+                  <option value="viewer">Viewer (Read-only)</option>
                 </select>
                 <p className="text-xs text-slate-400 mt-1">
-                  {inviteeRole === 'player'
-                    ? 'Players can edit all campaign content'
-                    : 'DMs have full permissions including managing members'}
+                  {inviteeRole === 'contributor'
+                    ? 'Contributors can edit all campaign content (items, players, transactions)'
+                    : 'Viewers can only view campaign content, no editing'}
                 </p>
               </div>
             </div>

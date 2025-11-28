@@ -136,10 +136,11 @@ const AcceptInvite = ({ inviteToken, user, onAccepted, onDeclined }) => {
 
   const getRoleBadge = (role) => {
     const badges = {
-      dm: { text: 'DM', color: 'bg-purple-600' },
-      player: { text: 'Player', color: 'bg-slate-600' }
+      contributor: { text: 'Contributor', color: 'bg-purple-600' },
+      viewer: { text: 'Viewer', color: 'bg-slate-600' },
+      owner: { text: 'Owner', color: 'bg-cyan-600' }
     };
-    return badges[role] || badges.player;
+    return badges[role] || badges.viewer;
   };
 
   if (loading) {
@@ -214,14 +215,14 @@ const AcceptInvite = ({ inviteToken, user, onAccepted, onDeclined }) => {
           <p className="text-sm text-slate-400">
             You'll join as a <strong className="text-white">{inviteInfo.role}</strong>
           </p>
-          {inviteInfo.role === 'dm' && (
+          {inviteInfo.role === 'contributor' && (
             <p className="text-xs text-slate-400 mt-2">
-              As a DM, you can edit campaign settings, manage items and players
+              As a Contributor, you can edit all campaign content (items, players, transactions)
             </p>
           )}
-          {inviteInfo.role === 'player' && (
+          {inviteInfo.role === 'viewer' && (
             <p className="text-xs text-slate-400 mt-2">
-              As a Player, you can view campaign data
+              As a Viewer, you can view all campaign data but cannot make changes
             </p>
           )}
         </div>

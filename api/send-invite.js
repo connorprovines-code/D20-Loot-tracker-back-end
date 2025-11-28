@@ -38,7 +38,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const roleText = role === 'dm' ? 'Dungeon Master' : 'Player';
+    const roleText = role === 'contributor' ? 'Contributor' : 'Viewer';
 
     const { data, error } = await resend.emails.send({
       from: 'D20 Loot Tracker <noreply@d20-loot-tracker.com>',
@@ -73,9 +73,9 @@ export default async function handler(req, res) {
                 <p style="margin: 5px 0 0 0; color: #64748b; font-size: 14px;">Role: ${roleText}</p>
               </div>
 
-              ${role === 'player'
-                ? '<p style="color: #475569;">As a <strong>collaborator</strong>, you\'ll be able to edit all campaign content including items, players, and transactions.</p>'
-                : '<p style="color: #475569;">As a <strong>Dungeon Master</strong>, you\'ll have full permissions including managing members and all campaign content.</p>'
+              ${role === 'contributor'
+                ? '<p style="color: #475569;">As a <strong>Contributor</strong>, you\'ll be able to edit all campaign content including items, players, and transactions.</p>'
+                : '<p style="color: #475569;">As a <strong>Viewer</strong>, you\'ll have read-only access to view all campaign content.</p>'
               }
 
               <!-- CTA Button -->
