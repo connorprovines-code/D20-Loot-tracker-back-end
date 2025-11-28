@@ -19,40 +19,96 @@ const AcceptInvite = ({ inviteToken, user, onAccepted, onDeclined }) => {
     setError(null);
 
     try {
-      // Use RPC function to get campaign info for the invite
-      // This bypasses RLS in a controlled way
-      const { data, error } = await supabase
-        .rpc('get_invite_campaign_info', {
-          p_invite_token: inviteToken
-        })
+      console.log('Loading invite info for token:', inviteToken);
+      console.log('Current user:', user?.email);
+
+      // First, try the direct query approach (simpler)
+      const { data: inviteData, error: inviteError } = await supabase
+        .from('campaign_invites')
+        .select(`
+          id,
+          role,
+          status,
+          expires_at,
+          invitee_email,
+          campaign_id
+        `)
+        .eq('invite_token', inviteToken)
+        .eq('invitee_email', user.email.toLowerCase())
+        .eq('status', 'pending')
+        .gt('expires_at', new Date().toISOString())
         .single();
 
-      if (error) {
-        console.error('RPC error:', error);
-        setError('Invite not found or not addressed to you');
+      console.log('Direct invite query:', { inviteData, inviteError });
+
+      if (inviteError || !inviteData) {
+        console.log('Direct query failed, trying RPC function...');
+
+        // Fallback to RPC function
+        const { data: rpcData, error: rpcError } = await supabase
+          .rpc('get_invite_campaign_info', {
+            p_invite_token: inviteToken
+          })
+          .single();
+
+        console.log('RPC response:', { rpcData, rpcError });
+
+        if (rpcError) {
+          console.error('RPC error details:', {
+            message: rpcError.message,
+            details: rpcError.details,
+            hint: rpcError.hint,
+            code: rpcError.code
+          });
+          setError(`Invite not found or not addressed to you (${user.email})`);
+          return;
+        }
+
+        if (!rpcData) {
+          setError('Invite not found, has expired, or has already been used');
+          return;
+        }
+
+        // Transform RPC result
+        setInviteInfo({
+          id: inviteToken,
+          role: rpcData.invite_role,
+          status: rpcData.invite_status,
+          expires_at: rpcData.invite_expires_at,
+          campaigns: {
+            id: rpcData.campaign_id,
+            name: rpcData.campaign_name,
+            game_system: rpcData.game_system
+          }
+        });
         return;
       }
 
-      if (!data) {
-        setError('Invite not found, has expired, or has already been used');
+      // If direct query worked, now get campaign info
+      const { data: campaignData, error: campaignError } = await supabase
+        .from('campaigns')
+        .select('id, name, game_system')
+        .eq('id', inviteData.campaign_id)
+        .single();
+
+      console.log('Campaign query:', { campaignData, campaignError });
+
+      if (campaignError || !campaignData) {
+        setError('Campaign not found');
         return;
       }
 
-      // Transform the RPC result to match expected format
+      // Set invite info from direct query
       setInviteInfo({
         id: inviteToken,
-        role: data.invite_role,
-        status: data.invite_status,
-        expires_at: data.invite_expires_at,
-        campaigns: {
-          id: data.campaign_id,
-          name: data.campaign_name,
-          game_system: data.game_system
-        }
+        role: inviteData.role,
+        status: inviteData.status,
+        expires_at: inviteData.expires_at,
+        campaigns: campaignData
       });
     } catch (err) {
       console.error('Error loading invite:', err);
-      setError('Error loading invite information');
+      setError('Error loading invite information: ' + err.message);
     } finally {
       setLoading(false);
     }
