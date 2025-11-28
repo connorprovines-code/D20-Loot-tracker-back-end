@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
-import { Plus, LogOut, Trash2, Edit2, Check, X, UserPlus, Users } from 'lucide-react';
+import { Plus, Trash2, Edit2, Check, X, UserPlus, Users } from 'lucide-react';
 import InviteMemberModal from './InviteMemberModal';
 import ManageMembersModal from './ManageMembersModal';
+import Navbar from './Navbar';
 
 const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
   const [campaignMemberships, setCampaignMemberships] = useState([]);
@@ -319,21 +320,14 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white p-6">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white">
+      <Navbar user={user} onLogout={onLogout} />
+
+      <div className="max-w-4xl mx-auto p-6">
         {/* Header */}
-        <div className="mb-6 flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold mb-1">Your Campaigns</h1>
-            <p className="text-sm text-slate-400">Logged in as {user.email}</p>
-          </div>
-          <button
-            onClick={onLogout}
-            className="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-4 py-2 rounded-lg flex items-center gap-2 transition-all hover:border-red-500 text-slate-300 hover:text-red-400"
-          >
-            <LogOut size={16} />
-            <span className="hidden sm:inline">Logout</span>
-          </button>
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold mb-1">Your Campaigns</h1>
+          <p className="text-sm text-slate-400">Select or create a campaign to get started</p>
         </div>
 
         {/* Create Campaign Button */}

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
-import { Plus, Trash2, Coins, Package, History, ShoppingCart, MinusCircle, PlusCircle, Edit2, Settings, UserPlus, UserMinus, FileText, ArrowRightLeft, ArrowLeft, LogOut } from 'lucide-react';
+import { Plus, Trash2, Coins, Package, History, ShoppingCart, MinusCircle, PlusCircle, Edit2, Settings, UserPlus, UserMinus, FileText, ArrowRightLeft } from 'lucide-react';
 import DndApiSearchModal from './DndApiSearchModal';
 import Pf2eApiSearchModal from './Pf2eApiSearchModal';
 import Pf1eApiSearchModal from './Pf1eApiSearchModal';
+import Navbar from './Navbar';
 
 const App = ({ user, campaign, onBackToCampaigns, onLogout }) => {
   const [players, setPlayers] = useState([]);
@@ -1134,32 +1135,15 @@ const handleGoldEdit = async (entity, newValue) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white p-3 sm:p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold mb-1">{campaign.name}</h1>
-            <p className="text-xs md:text-sm text-slate-400">D20 TTRPG - Gold Distribution & Inventory</p>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={onBackToCampaigns}
-              className="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-3 py-2 rounded-lg flex items-center gap-2 transition-all hover:border-cyan-500 text-slate-300 hover:text-cyan-400"
-            >
-              <ArrowLeft size={16} />
-              <span className="hidden sm:inline">Campaigns</span>
-            </button>
-            <button
-              onClick={onLogout}
-              className="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-3 py-2 rounded-lg flex items-center gap-2 transition-all hover:border-red-500 text-slate-300 hover:text-red-400"
-            >
-              <LogOut size={16} />
-              <span className="hidden sm:inline">Logout</span>
-            </button>
-          </div>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white">
+      <Navbar
+        user={user}
+        campaign={campaign}
+        onBackToCampaigns={onBackToCampaigns}
+        onLogout={onLogout}
+      />
 
+      <div className="max-w-7xl mx-auto p-3 sm:p-6">
         {/* Navigation */}
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
           <button
