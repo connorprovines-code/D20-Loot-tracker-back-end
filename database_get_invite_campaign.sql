@@ -36,10 +36,10 @@ BEGIN
   RETURN QUERY
   SELECT
     c.id as campaign_id,
-    c.name as campaign_name,
-    c.game_system,
-    ci.role as invite_role,
-    ci.status as invite_status,
+    c.name::TEXT as campaign_name,
+    c.game_system::TEXT,
+    ci.role::TEXT as invite_role,
+    ci.status::TEXT as invite_status,
     ci.expires_at as invite_expires_at
   FROM campaign_invites ci
   JOIN campaigns c ON c.id = ci.campaign_id
