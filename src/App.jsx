@@ -509,10 +509,8 @@ const App = ({ user, campaign, onBackToCampaigns, onLogout }) => {
       return;
     }
 
-    if (data) {
-      setIncomingLoot(prev => [data, ...prev]);
-      setMasterLog(prev => [data, ...prev]);
-    }
+    // Don't manually update state - let real-time subscription handle it
+    // This prevents duplicate items
 
     setNewItem({
       name: '',
@@ -905,30 +903,12 @@ const App = ({ user, campaign, onBackToCampaigns, onLogout }) => {
         }
       }
 
-      const item = {
-        id: itemData.id,
-        name: itemData.name,
-        value: itemData.value,
-        originalValue: itemData.original_value,
-        isTreasure: itemData.is_treasure,
-        charges: itemData.charges,
-        consumable: itemData.consumable,
-        notes: itemData.notes || '',
-        bulk: itemData.bulk,
-        rarity: itemData.rarity,
-        requires_attunement: itemData.requires_attunement || false,
-        is_attuned: itemData.is_attuned || false
-      };
-
-      setInventories(prev => ({
-        ...prev,
-        [buyingPlayer]: [...(prev[buyingPlayer] || []), item]
-      }));
+      // Don't manually update state - let real-time subscription handle it
+      // This prevents duplicate items
 
       // Reload gold from database to ensure sync
       await reloadGold();
 
-      setMasterLog(prev => [itemData, ...prev]);
       await addTransaction('purchase', `${buyingPlayer} bought ${newItem.name}`, -cost, buyingPlayer);
 
       setNewItem({
@@ -1116,10 +1096,13 @@ const handleGoldEdit = async (entity, newValue) => {
       .insert(itemsToInsert)
       .select();
 
-    if (!error && data) {
-      setIncomingLoot(prev => [...data, ...prev]);
-      setMasterLog(prev => [...data, ...prev]);
+    if (error) {
+      alert(`Error importing items: ${error.message}`);
+      return;
     }
+
+    // Don't manually update state - let real-time subscription handle it
+    // This prevents duplicate items
 
     setBulkImportText('');
     setParsedBulkItems([]);

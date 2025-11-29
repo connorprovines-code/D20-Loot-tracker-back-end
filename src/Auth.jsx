@@ -214,13 +214,28 @@ const Auth = ({ onAuthSuccess }) => {
             <div className="mt-4 text-center text-sm text-slate-400">
               <a
                 href="#"
-                onClick={(e) => {
+                onClick={async (e) => {
                   e.preventDefault();
-                  if (email) {
-                    supabase.auth.resetPasswordForEmail(email);
-                    alert('Password reset email sent! Check your inbox.');
-                  } else {
+                  if (!email) {
                     alert('Please enter your email first');
+                    return;
+                  }
+
+                  setLoading(true);
+                  try {
+                    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                      redirectTo: `${window.location.origin}/reset-password`
+                    });
+
+                    if (error) {
+                      alert(`Error: ${error.message}`);
+                    } else {
+                      alert('Password reset email sent! Check your inbox (and spam folder).');
+                    }
+                  } catch (error) {
+                    alert(`Failed to send reset email: ${error.message}`);
+                  } finally {
+                    setLoading(false);
                   }
                 }}
                 className="hover:text-cyan-400 transition-colors"
