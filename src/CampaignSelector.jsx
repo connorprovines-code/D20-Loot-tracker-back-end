@@ -236,8 +236,8 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
 
         {/* Actions Row */}
         {editingId !== campaign.id && (
-          <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-700">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3 pt-3 border-t border-slate-700">
+            <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
               {isOwner && (
                 <>
                   <button
@@ -245,22 +245,22 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
                       setSelectedCampaignForModal(campaign);
                       setShowInviteModal(true);
                     }}
-                    className="bg-green-600/10 hover:bg-green-600/20 border border-green-600/30 text-green-400 px-3 py-1.5 rounded text-sm flex items-center gap-1.5 transition-colors font-medium"
+                    className="bg-green-600/10 hover:bg-green-600/20 border border-green-600/30 text-green-400 px-2 sm:px-3 py-2 rounded text-xs sm:text-sm flex items-center gap-1 sm:gap-1.5 transition-colors font-medium"
                     title="Invite Members"
                   >
                     <UserPlus size={14} />
-                    <span>Invite</span>
+                    <span className="hidden xs:inline">Invite</span>
                   </button>
                   <button
                     onClick={() => {
                       setSelectedCampaignForModal(campaign);
                       setShowManageMembersModal(true);
                     }}
-                    className="bg-purple-600/10 hover:bg-purple-600/20 border border-purple-600/30 text-purple-400 px-3 py-1.5 rounded text-sm flex items-center gap-1.5 transition-colors font-medium"
+                    className="bg-purple-600/10 hover:bg-purple-600/20 border border-purple-600/30 text-purple-400 px-2 sm:px-3 py-2 rounded text-xs sm:text-sm flex items-center gap-1 sm:gap-1.5 transition-colors font-medium"
                     title="Manage Members"
                   >
                     <Users size={14} />
-                    <span>Manage</span>
+                    <span className="hidden xs:inline">Manage</span>
                   </button>
                 </>
               )}
@@ -270,11 +270,11 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
                     setEditingId(campaign.id);
                     setEditingName(campaign.name);
                   }}
-                  className="bg-cyan-600/10 hover:bg-cyan-600/20 border border-cyan-600/30 text-cyan-400 px-3 py-1.5 rounded text-sm flex items-center gap-1.5 transition-colors font-medium"
+                  className="bg-cyan-600/10 hover:bg-cyan-600/20 border border-cyan-600/30 text-cyan-400 px-2 sm:px-3 py-2 rounded text-xs sm:text-sm flex items-center gap-1 sm:gap-1.5 transition-colors font-medium"
                   title="Edit Campaign Name"
                 >
                   <Edit2 size={14} />
-                  <span>Edit</span>
+                  <span className="hidden xs:inline">Edit</span>
                 </button>
               )}
               {isOwner ? (
@@ -283,16 +283,16 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
                     setSelectedCampaignForModal(campaign);
                     setShowDeleteModal(true);
                   }}
-                  className="bg-red-600/10 hover:bg-red-600/20 border border-red-600/30 text-red-400 px-3 py-1.5 rounded text-sm flex items-center gap-1.5 transition-colors font-medium"
+                  className="bg-red-600/10 hover:bg-red-600/20 border border-red-600/30 text-red-400 px-2 sm:px-3 py-2 rounded text-xs sm:text-sm flex items-center gap-1 sm:gap-1.5 transition-colors font-medium"
                   title="Delete Campaign"
                 >
                   <Trash2 size={14} />
-                  <span>Delete</span>
+                  <span className="hidden xs:inline">Delete</span>
                 </button>
               ) : (
                 <button
                   onClick={() => handleLeaveCampaign(campaign.id)}
-                  className="bg-orange-600/10 hover:bg-orange-600/20 border border-orange-600/30 text-orange-400 px-3 py-1.5 rounded text-sm flex items-center gap-1.5 transition-colors font-medium"
+                  className="bg-orange-600/10 hover:bg-orange-600/20 border border-orange-600/30 text-orange-400 px-2 sm:px-3 py-2 rounded text-xs sm:text-sm flex items-center gap-1 sm:gap-1.5 transition-colors font-medium"
                   title="Leave Campaign"
                 >
                   Leave
@@ -301,7 +301,7 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
             </div>
             <button
               onClick={() => onSelectCampaign(campaign)}
-              className="bg-cyan-600 hover:bg-cyan-700 px-6 py-2 rounded-lg font-medium transition-colors text-white"
+              className="bg-cyan-600 hover:bg-cyan-700 px-4 sm:px-6 py-2 rounded-lg font-medium transition-colors text-white text-sm sm:text-base"
             >
               Open Campaign
             </button>
@@ -323,7 +323,7 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 text-white">
       <Navbar user={user} onLogout={onLogout} />
 
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="max-w-4xl mx-auto p-3 sm:p-6">
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold mb-1">Your Campaigns</h1>
@@ -392,7 +392,7 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
       {/* Create Campaign Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-800 rounded-lg p-6 max-w-md w-full border border-slate-700">
+          <div className="bg-slate-800 rounded-lg p-4 sm:p-6 max-w-sm sm:max-w-md w-full border border-slate-700">
             <h3 className="text-xl font-bold mb-4 text-white">Create New Campaign</h3>
             <div className="space-y-4">
               <div>
@@ -481,7 +481,7 @@ const CampaignSelector = ({ user, onSelectCampaign, onLogout }) => {
       {/* Delete Campaign Confirmation Modal */}
       {showDeleteModal && selectedCampaignForModal && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-800 rounded-lg p-6 max-w-md w-full border border-red-700">
+          <div className="bg-slate-800 rounded-lg p-4 sm:p-6 max-w-sm sm:max-w-md w-full border border-red-700">
             <div className="flex items-center gap-3 mb-4">
               <Trash2 size={24} className="text-red-400" />
               <h3 className="text-xl font-bold text-white">Delete Campaign</h3>

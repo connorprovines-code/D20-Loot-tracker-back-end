@@ -158,8 +158,8 @@ const DndApiSearchModal = ({ isOpen, onClose, onSelectItem }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-      <div className="bg-slate-800 rounded-lg p-6 max-w-2xl w-full border border-slate-700 max-h-[80vh] flex flex-col">
+    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-2 sm:p-4 z-50">
+      <div className="bg-slate-800 rounded-lg p-4 sm:p-6 max-w-sm sm:max-w-md lg:max-w-2xl w-full border border-slate-700 max-h-[80vh] flex flex-col">
         {/* Header */}
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-bold text-white">Search D&D 5e Items</h3>

@@ -1128,50 +1128,50 @@ const handleGoldEdit = async (entity, newValue) => {
 
       <div className="max-w-7xl mx-auto p-3 sm:p-6">
         {/* Navigation */}
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+        <div className="flex gap-1 sm:gap-2 mb-4 sm:mb-6 overflow-x-auto pb-2">
           <button
             onClick={() => setActiveView('loot')}
-            className={`px-4 md:px-6 py-3 rounded-lg font-medium flex items-center gap-2 whitespace-nowrap transition-all text-sm md:text-base ${
+            className={`px-2 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg font-medium flex items-center gap-1 sm:gap-2 whitespace-nowrap transition-all text-xs sm:text-sm md:text-base ${
               activeView === 'loot' ? 'bg-cyan-600 shadow-lg' : 'bg-slate-800 hover:bg-slate-700'
             }`}
           >
-            <Package size={20} />
-            Incoming Loot
+            <Package size={18} className="sm:w-5 sm:h-5" />
+            <span className="hidden xs:inline">Incoming </span>Loot
           </button>
           <button
             onClick={() => setActiveView('inventories')}
-            className={`px-4 md:px-6 py-3 rounded-lg font-medium flex items-center gap-2 whitespace-nowrap transition-all text-sm md:text-base ${
+            className={`px-2 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg font-medium flex items-center gap-1 sm:gap-2 whitespace-nowrap transition-all text-xs sm:text-sm md:text-base ${
               activeView === 'inventories' ? 'bg-cyan-600 shadow-lg' : 'bg-slate-800 hover:bg-slate-700'
             }`}
           >
-            <Package size={20} />
+            <Package size={18} className="sm:w-5 sm:h-5" />
             Inventories
           </button>
           <button
             onClick={() => setActiveView('gold')}
-            className={`px-4 md:px-6 py-3 rounded-lg font-medium flex items-center gap-2 whitespace-nowrap transition-all text-sm md:text-base ${
+            className={`px-2 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg font-medium flex items-center gap-1 sm:gap-2 whitespace-nowrap transition-all text-xs sm:text-sm md:text-base ${
               activeView === 'gold' ? 'bg-cyan-600 shadow-lg' : 'bg-slate-800 hover:bg-slate-700'
             }`}
           >
-            <Coins size={20} />
+            <Coins size={18} className="sm:w-5 sm:h-5" />
             Gold
           </button>
           <button
             onClick={() => setActiveView('history')}
-            className={`px-4 md:px-6 py-3 rounded-lg font-medium flex items-center gap-2 whitespace-nowrap transition-all text-sm md:text-base ${
+            className={`px-2 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg font-medium flex items-center gap-1 sm:gap-2 whitespace-nowrap transition-all text-xs sm:text-sm md:text-base ${
               activeView === 'history' ? 'bg-cyan-600 shadow-lg' : 'bg-slate-800 hover:bg-slate-700'
             }`}
           >
-            <History size={20} />
+            <History size={18} className="sm:w-5 sm:h-5" />
             Log
           </button>
           <button
             onClick={() => setActiveView('settings')}
-            className={`px-4 md:px-6 py-3 rounded-lg font-medium flex items-center gap-2 whitespace-nowrap transition-all text-sm md:text-base ${
+            className={`px-2 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg font-medium flex items-center gap-1 sm:gap-2 whitespace-nowrap transition-all text-xs sm:text-sm md:text-base ${
               activeView === 'settings' ? 'bg-cyan-600 shadow-lg' : 'bg-slate-800 hover:bg-slate-700'
             }`}
           >
-            <Settings size={20} />
+            <Settings size={18} className="sm:w-5 sm:h-5" />
             Settings
           </button>
         </div>
@@ -1307,12 +1307,12 @@ const handleGoldEdit = async (entity, newValue) => {
         {activeView === 'inventories' && (
           <div>
             {/* Inventory Tabs */}
-            <div className="flex gap-2 mb-6 overflow-x-auto">
+            <div className="flex gap-1 sm:gap-2 mb-4 sm:mb-6 overflow-x-auto pb-2">
               {[...players, 'Party'].map(entity => (
                 <button
                   key={entity}
                   onClick={() => setActiveInventory(entity)}
-                  className={`px-6 py-3 rounded-lg font-medium whitespace-nowrap transition-all ${
+                  className={`px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg font-medium whitespace-nowrap transition-all text-sm sm:text-base ${
                     activeInventory === entity ? 'bg-cyan-600 shadow-lg' : 'bg-slate-800 hover:bg-slate-700'
                   }`}
                 >
@@ -1321,7 +1321,7 @@ const handleGoldEdit = async (entity, newValue) => {
               ))}
               <button
                 onClick={() => setActiveInventory('Consumables')}
-                className={`px-6 py-3 rounded-lg font-medium whitespace-nowrap transition-all ${
+                className={`px-3 sm:px-4 md:px-6 py-2 sm:py-3 rounded-lg font-medium whitespace-nowrap transition-all text-sm sm:text-base ${
                   activeInventory === 'Consumables' ? 'bg-cyan-600 shadow-lg' : 'bg-slate-800 hover:bg-slate-700'
                 }`}
               >
@@ -1331,10 +1331,10 @@ const handleGoldEdit = async (entity, newValue) => {
 
             {/* Current Inventory */}
             {activeInventory !== 'Consumables' && (
-              <div className="bg-slate-800 rounded-lg p-6 shadow-xl border border-slate-700">
-                <div className="flex justify-between items-center mb-6">
+              <div className="bg-slate-800 rounded-lg p-3 sm:p-6 shadow-xl border border-slate-700">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0 mb-4 sm:mb-6">
                   <div>
-                    <h3 className="text-2xl font-bold">{activeInventory}</h3>
+                    <h3 className="text-xl sm:text-2xl font-bold">{activeInventory}</h3>
                     <div className="text-cyan-400 font-bold text-xl mt-1">
                       {gold[activeInventory] || gold['Party Fund']} gp
                     </div>
@@ -1478,17 +1478,17 @@ const handleGoldEdit = async (entity, newValue) => {
                           </div>
                         )}
                       </div>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-1 sm:gap-2">
                         <button
                           onClick={() => {
                             setSelectedItem(item);
                             setSellingFrom(activeInventory);
                             setShowSellModal(true);
                           }}
-                          className="bg-cyan-600 hover:bg-cyan-700 px-3 py-2 rounded text-sm transition-colors inline-flex items-center gap-2"
+                          className="bg-cyan-600 hover:bg-cyan-700 px-2 sm:px-3 py-2 rounded text-xs sm:text-sm transition-colors inline-flex items-center gap-1 sm:gap-2"
                         >
-                          <Coins size={16} />
-                          Sell
+                          <Coins size={14} className="sm:w-4 sm:h-4" />
+                          <span className="hidden xs:inline">Sell</span>
                         </button>
                         <button
                           onClick={() => {
@@ -1496,42 +1496,42 @@ const handleGoldEdit = async (entity, newValue) => {
                             setTransferringFrom(activeInventory);
                             setShowTransferModal(true);
                           }}
-                          className="bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded text-sm transition-colors inline-flex items-center gap-2"
+                          className="bg-blue-600 hover:bg-blue-700 px-2 sm:px-3 py-2 rounded text-xs sm:text-sm transition-colors inline-flex items-center gap-1 sm:gap-2"
                         >
-                          <ArrowRightLeft size={16} />
-                          Transfer
+                          <ArrowRightLeft size={14} className="sm:w-4 sm:h-4" />
+                          <span className="hidden xs:inline">Transfer</span>
                         </button>
                         <button
                           onClick={() => {
                             setEditingItemNotes(item.id);
                             setEditingNotes(item.notes || '');
                           }}
-                          className="bg-purple-600 hover:bg-purple-700 px-3 py-2 rounded text-sm transition-colors inline-flex items-center gap-2"
+                          className="bg-purple-600 hover:bg-purple-700 px-2 sm:px-3 py-2 rounded text-xs sm:text-sm transition-colors inline-flex items-center gap-1 sm:gap-2"
                         >
-                          <Edit2 size={16} />
-                          Edit Notes
+                          <Edit2 size={14} className="sm:w-4 sm:h-4" />
+                          <span className="hidden xs:inline">Notes</span>
                         </button>
 
                         {/* D&D 5e: Attunement Toggle */}
                         {campaign.game_system === 'dnd-5e' && item.requires_attunement && (
                           <button
                             onClick={() => handleToggleAttunement(item, activeInventory)}
-                            className={`px-3 py-2 rounded text-sm transition-colors inline-flex items-center gap-2 ${
+                            className={`px-2 sm:px-3 py-2 rounded text-xs sm:text-sm transition-colors inline-flex items-center gap-1 sm:gap-2 ${
                               item.is_attuned
                                 ? 'bg-amber-600 hover:bg-amber-700'
                                 : 'bg-slate-600 hover:bg-slate-500'
                             }`}
                           >
-                            {item.is_attuned ? '✓ Attuned' : 'Attune'}
+                            {item.is_attuned ? '✓' : 'Attune'}
                           </button>
                         )}
 
                         <button
                           onClick={() => handleDiscardItem(activeInventory, item)}
-                          className="bg-red-600 hover:bg-red-700 px-3 py-2 rounded text-sm transition-colors inline-flex items-center gap-2"
+                          className="bg-red-600 hover:bg-red-700 px-2 sm:px-3 py-2 rounded text-xs sm:text-sm transition-colors inline-flex items-center gap-1 sm:gap-2"
                         >
-                          <Trash2 size={16} />
-                          Discard
+                          <Trash2 size={14} className="sm:w-4 sm:h-4" />
+                          <span className="hidden xs:inline">Discard</span>
                         </button>
                       </div>
                     </div>
@@ -1639,12 +1639,12 @@ const handleGoldEdit = async (entity, newValue) => {
 
         {/* Gold Tracking View */}
         {activeView === 'gold' && (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <h2 className="text-xl sm:text-2xl font-bold">Current Gold</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {Object.entries(gold).map(([entity, amount]) => (
-                <div key={entity} className="bg-slate-800 rounded-lg p-6 shadow-xl border border-slate-700">
-                  <div className="text-slate-300 mb-2">{entity}</div>
+                <div key={entity} className="bg-slate-800 rounded-lg p-4 sm:p-6 shadow-xl border border-slate-700">
+                  <div className="text-slate-300 text-sm sm:text-base mb-2">{entity}</div>
                   {editingGold === entity ? (
                     <input
                       type="number"
@@ -1656,15 +1656,15 @@ const handleGoldEdit = async (entity, newValue) => {
                           handleGoldEdit(entity, e.target.value);
                         }
                       }}
-                      className="text-3xl font-bold text-cyan-400 bg-slate-700 rounded px-2 py-1 w-full"
+                      className="text-2xl sm:text-3xl font-bold text-cyan-400 bg-slate-700 rounded px-2 py-1 w-full"
                     />
                   ) : (
                     <div
                       onClick={() => setEditingGold(entity)}
-                      className="text-3xl font-bold text-cyan-400 cursor-pointer hover:text-cyan-300 flex items-center gap-2"
+                      className="text-2xl sm:text-3xl font-bold text-cyan-400 cursor-pointer hover:text-cyan-300 flex items-center gap-2"
                     >
                       {amount} gp
-                      <Edit2 size={20} className="text-slate-500" />
+                      <Edit2 size={16} className="sm:w-5 sm:h-5 text-slate-500" />
                     </div>
                   )}
                 </div>
@@ -1841,8 +1841,8 @@ const handleGoldEdit = async (entity, newValue) => {
       {/* Modals - Same as before but with async handlers */}
       {/* Add Item Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-800 rounded-lg p-6 max-w-md w-full border border-slate-700">
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-2 sm:p-4 z-50">
+          <div className="bg-slate-800 rounded-lg p-4 sm:p-6 max-w-sm sm:max-w-md w-full border border-slate-700">
             <h3 className="text-xl font-bold mb-4">Add New Item</h3>
 
             {/* D&D 5e API Search Button */}
@@ -2013,8 +2013,8 @@ const handleGoldEdit = async (entity, newValue) => {
 
       {/* Assign Player Modal */}
       {showAssignModal && selectedItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-800 rounded-lg p-6 max-w-md w-full border border-slate-700">
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-2 sm:p-4 z-50">
+          <div className="bg-slate-800 rounded-lg p-4 sm:p-6 max-w-sm sm:max-w-md w-full border border-slate-700">
             <h3 className="text-xl font-bold mb-4">Assign {selectedItem.name}</h3>
             <div className="space-y-2">
               {[...players, 'Party'].map(player => (
@@ -2042,8 +2042,8 @@ const handleGoldEdit = async (entity, newValue) => {
 
       {/* Transfer Item Modal */}
       {showTransferModal && selectedItem && transferringFrom && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-800 rounded-lg p-6 max-w-md w-full border border-slate-700">
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-2 sm:p-4 z-50">
+          <div className="bg-slate-800 rounded-lg p-4 sm:p-6 max-w-sm sm:max-w-md w-full border border-slate-700">
             <h3 className="text-xl font-bold mb-4">Transfer {selectedItem.name}</h3>
             <div className="mb-4 text-sm text-slate-300">
               From: <span className="text-cyan-400 font-semibold">{transferringFrom}</span>
@@ -2076,8 +2076,8 @@ const handleGoldEdit = async (entity, newValue) => {
 
       {/* Sell Item Modal */}
       {showSellModal && selectedItem && sellingFrom && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-800 rounded-lg p-6 max-w-md w-full border border-slate-700">
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-2 sm:p-4 z-50">
+          <div className="bg-slate-800 rounded-lg p-4 sm:p-6 max-w-sm sm:max-w-md w-full border border-slate-700">
             <h3 className="text-xl font-bold mb-4">Sell {selectedItem.name}</h3>
             <div className="mb-4 text-sm text-slate-300">
               From: <span className="text-cyan-400 font-semibold">{sellingFrom}</span>
@@ -2144,8 +2144,8 @@ const handleGoldEdit = async (entity, newValue) => {
 
       {/* Buy Item Modal */}
       {showBuyModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-800 rounded-lg p-6 max-w-md w-full border border-slate-700">
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-2 sm:p-4 z-50">
+          <div className="bg-slate-800 rounded-lg p-4 sm:p-6 max-w-sm sm:max-w-md w-full border border-slate-700">
             <h3 className="text-xl font-bold mb-4">Buy Item for {buyingPlayer}</h3>
             <div className="mb-4 text-sm text-slate-300">
               Current gold: <span className="text-cyan-400 font-bold">{gold[buyingPlayer] || gold['Party Fund']} gp</span>
@@ -2338,8 +2338,8 @@ const handleGoldEdit = async (entity, newValue) => {
 
       {/* Add Player Modal */}
       {showPlayerModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-800 rounded-lg p-6 max-w-md w-full border border-slate-700">
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-2 sm:p-4 z-50">
+          <div className="bg-slate-800 rounded-lg p-4 sm:p-6 max-w-sm sm:max-w-md w-full border border-slate-700">
             <h3 className="text-xl font-bold mb-4">Add New Player</h3>
             <div className="space-y-4">
               <div>
@@ -2385,8 +2385,8 @@ const handleGoldEdit = async (entity, newValue) => {
 
       {/* Bulk Import Modal */}
       {showBulkImportModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-slate-800 rounded-lg p-6 max-w-4xl w-full border border-slate-700 my-8">
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-2 sm:p-4 z-50 overflow-y-auto">
+          <div className="bg-slate-800 rounded-lg p-4 sm:p-6 max-w-sm sm:max-w-md lg:max-w-2xl xl:max-w-4xl w-full border border-slate-700 my-8">
             <h3 className="text-xl font-bold mb-4">Bulk Import Loot</h3>
             
             {parsedBulkItems.length === 0 ? (
